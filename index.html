@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zeyar Win Thu - Backend developer</title>
+    <style>
+
+        body {
+        background-color: #808b96;
+        }
+       /* Add a black background color to the top navigation */
+        .topnav {
+        background-color: transparent;
+        overflow: hidden;
+        display: flex;
+        justify-content: space-between;
+        }
+
+        /* Style the links inside the navigation bar */
+        .topnav a {
+        float: left;
+        display: block;
+        color: #f2f2f2;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+        font-size: 17px;
+        }
+
+        /* Change the color of links on hover */
+        .topnav a:hover {
+        background-color: #abb2b9;
+        border-radius: 10%;
+        color: #2c3e50;
+        }
+
+        /* Add an active class to highlight the current page */
+        .topnav a.active {
+        background-color: #abebc6;
+        border-radius: 10%;
+        color: #2c3e50;
+        font-weight: bold;
+        }
+        .zeyar:hover {
+        color: #f2f3f4 !important;
+        font-weight: bold !important;
+        background-color: transparent !important;
+        }
+
+        /* Hide the link that should open and close the topnav on small screens */
+        .topnav .icon {
+        display: none;
+        }
+        .topnav a.split {
+        float: right;
+        }
+        .right-links {
+        display: flex;
+        gap: 10px; /* Optional: adds space between the links */
+        }
+        * {
+        color:  #5d6d7e;
+        }
+        .name-style{
+            color:#2e4053;
+        }
+        .typing-effect {
+            font-family: Arial, Helvetica, sans-serif; /* Optional: to mimic a typewriter font */
+            font-size: 20px; /* Adjust font size as needed */
+            white-space: nowrap; /* Prevent text from wrapping */
+            overflow: hidden; /* Hide the overflow to keep the text inside the container */
+            width: 0;
+            animation: typing 6s steps(30, end) forwards, blink-caret 0.75s step-end infinite, cursor-fade 5s forwards;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: black; }
+        }
+
+        @keyframes cursor-fade {
+            0% { border-color: black; }
+            99% { border-color: black; }
+            100% { border-color: transparent; }
+        }
+
+
+    </style>
+</head>
+<body>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <div class="topnav" id="myTopnav">
+        <a href="#home" class="zeyar">Zeyar <i class="fa fa-fw fa-home"></i></a>
+        <div class="right-links">
+            <a href="#work" class="split">Work</a>
+            <a href="#about" class="split">About</a>
+            <a href="#contact" class="split">GET IN TOUCH</a>
+            <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+                <i class="fa fa-bars"></i>
+            </a>
+        </div>
+    </div>
+    <div class="typing-effect">
+        Hello. I am Zeyar Win Thu.
+            You can call me <span class="name-style">Zeyar</span>.
+    </div>
+    
+</body>
+</html>
