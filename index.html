@@ -5,7 +5,7 @@
     <style>
 
         body {
-        background-color: #808b96;
+        background-color: #d5dbdb;
         }
        /* Add a black background color to the top navigation */
         .topnav {
@@ -19,7 +19,7 @@
         .topnav a {
         float: left;
         display: block;
-        color: #f2f2f2;
+        color: #5d6d7e;
         text-align: center;
         padding: 14px 16px;
         text-decoration: none;
@@ -28,20 +28,20 @@
 
         /* Change the color of links on hover */
         .topnav a:hover {
-        background-color: #abb2b9;
+        background-color: #808b96;
         border-radius: 10%;
-        color: #2c3e50;
+        color: #f2f3f4;
         }
 
         /* Add an active class to highlight the current page */
         .topnav a.active {
         background-color: #abebc6;
         border-radius: 10%;
-        color: #2c3e50;
+        color: #eaeded;
         font-weight: bold;
         }
         .zeyar:hover {
-        color: #f2f3f4 !important;
+        color: #abb2b9 !important;
         font-weight: bold !important;
         background-color: transparent !important;
         }
@@ -64,8 +64,9 @@
             color:#2e4053;
         }
         .home-body{
-            padding-top:40vh;
+            padding-top:20vh;
             padding-left: 60px;
+            padding-right: 60px;
             margin-left:auto;
             display:block;
             position: relative;
@@ -101,6 +102,32 @@
             margin-top: 0; /* Remove top margin */
             margin-bottom: 0; /* Remove bottom margin */
             line-height: 1.5; /* Adjust line height if needed */
+        }
+        .company-logo {
+        width: 100px;
+        height: 100px;
+        border-radius: 15%;
+        border: #2e4053 solid 2px;
+        align-items: start;
+        }
+        .spacing-tab{
+            padding-top:20vh;
+        }
+        .work-duration{
+            font-size:medium;
+            color:#808b96;
+        }
+        @media (max-width: 768px) { /* Tablet and smaller screens */
+            .company-logo {
+                width: 50px;
+                height: 50px;
+            }
+        }
+        @media (max-width: 480px) { /* Mobile screens */
+            .company-logo {
+                width: 20px;
+                height: 20px;
+            }
         }
         @keyframes typing {
             from { width: 0; }
@@ -143,7 +170,8 @@
                 You can call me <span class="name-style">Zeyar</span>.
         </div>
         <p>
-            I'm backend developer living in Tokyo, Japan. <br/>
+            I am a full-stack developer with 5+ years of experience, <br/>
+            specializing in backend development living in Tokyo, Japan. <br/>
             Currently I work at <a href="https://www.rezerv.co/" target="_blank" rel="noopener noreferrer">Rezerv</a>, <br/>
             Service Business Management Software <br/>
             for your
@@ -151,6 +179,44 @@
                 <div id="rotating-list" class="rotating-list"><span></span></div>
             </div>
         </p>
+        <div class="spacing-tab"></div>
+        <div id="work">
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div style="display: flex;">
+                    <div style="flex: none; padding-right: 3%;">
+                        <img src="cropped-thetys-logo.jpg" class="company-logo"/>
+                    </div>
+                    <div style="flex: 2; display: flex; flex-direction: column;">
+                        <div style="flex: none; margin: 0; padding: 0; font-size: large;">
+                            <a href="https://www.thetysmyanmar.com" target="_blank" rel="noopener noreferrer">THETYS</a> <span class="work-duration">February 2019 - March 2022</span>
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size:large; line-height: 1;">* February 2019 - February 2020</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:small; line-height: 1;">
+                            <ul>
+                                <li>Develop websites using HTML5, CSS3, JavaScript, Vue.js, ASP .NET, .NET MVC5, EF, etc...</li>
+                                <li>Develop Web APIs .NET Core, EF Core and LINQ.</li>
+                                <li>Participate in 5 software development.</li>
+                            </ul>
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size:large; line-height: 1;">* March 2020 - April 2022</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:small; line-height: 1;">
+                            <ul>
+                                <li>Work on two projects as Assistant Lead.</li>
+                                <li>Lead team of up to 5 members undertaking the full Software Cycle.</li>
+                                <li>Analyze and assign the tasks for members.</li>
+                                <li>Design and apply the database.</li>
+                                <li>Develop mobile application using xamarin and Repository
+                                    pattern REST APIs.</li>
+                                <li>Familiar with Google APIs, Firebase.</li>
+                                <li>Manage the App Service and Database over Microsoft Azure
+                                    Portal.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>        
+        
     </div>
     <script>
         const listItems = [
