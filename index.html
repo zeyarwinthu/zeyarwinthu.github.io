@@ -52,6 +52,11 @@
         }
         .topnav a.split {
         float: right;
+        font-size: x-large;
+        }
+        .topnav a.zeyar {
+        float: left;
+        font-size: x-large;
         }
         .right-links {
         display: flex;
@@ -114,7 +119,7 @@
             padding-top:20vh;
         }
         .work-duration{
-            font-size:medium;
+            font-size:x-large;
             color:#808b96;
         }
         @media (max-width: 768px) { /* Tablet and smaller screens */
@@ -166,40 +171,82 @@
     </div>
     <div class="home-body">
         <div class="typing-effect">
-            Hello. I am Zeyar Win Thu.
+            Hello. I am <span class="name-style"> Zeyar Win Thu.</span>
                 You can call me <span class="name-style">Zeyar</span>.
         </div>
         <p>
             I am a full-stack developer with 5+ years of experience, <br/>
             specializing in backend development living in Tokyo, Japan. <br/>
-            Currently I work at <a href="https://www.rezerv.co/" target="_blank" rel="noopener noreferrer">Rezerv</a>, <br/>
+            <!-- Currently I work at <a href="https://www.rezerv.co/" target="_blank" rel="noopener noreferrer">Rezerv</a>, <br/>
             Service Business Management Software <br/>
             for your
             <div class="rotating-list-container">
                 <div id="rotating-list" class="rotating-list"><span></span></div>
-            </div>
+            </div> -->
         </p>
         <div class="spacing-tab"></div>
         <div id="work">
+            <h3>Technical Skills</h3>
+        </div>
+        <div class="spacing-tab"></div>
+        <div id="work">
+            <h3>Work Experience</h3>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div style="display: flex;">
+                    <div style="flex: none; padding-right: 3%;">
+                        <img src="rezerv-logo.png" class="company-logo"/>
+                    </div>
+                    <div style="flex: 2; display: flex; flex-direction: column;">
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
+                            <a href="https://www.rezerv.co" target="_blank" rel="noopener noreferrer">REZERV</a> Co., Ltd
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Senior Backend Developer</div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* October 2022 - January 2024</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
+                            <ul>
+                                <li>Developed and maintained backend services for rezerv.co using .NET 6.</li>
+                                <li>Implemented Hangfire for background job processing and Log4Net for logging.</li>
+                                <li>Used RedLock for distributed locking mechanisms to ensure data consistency.</li>
+                                <li>Applied Automapper for efficient object mapping and transformation.</li>
+                                <li>Monitored performance and logs via AWS CloudWatch.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div style="display: flex;">
+                    <div style="flex: none; padding-right: 3%;">
+                        <img src="unifine-logo.png" class="company-logo"/>
+                    </div>
+                    <div style="flex: 2; display: flex; flex-direction: column;">
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
+                            UNIFINE Co., Ltd
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Senior .NET Developer</div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* April 2022 - September 2022</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
+                            <ul>
+                                <li>Take care web project using angular and API using .NET Core</li>
+                                <li>Maintain the window server (2019)</li>
+                                <li>Familiar with 3rd party APIs such as OneSignal, Google...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div style="display: flex; flex-direction: column; width: 100%;">
                 <div style="display: flex;">
                     <div style="flex: none; padding-right: 3%;">
                         <img src="cropped-thetys-logo.jpg" class="company-logo"/>
                     </div>
                     <div style="flex: 2; display: flex; flex-direction: column;">
-                        <div style="flex: none; margin: 0; padding: 0; font-size: large;">
-                            <a href="https://www.thetysmyanmar.com" target="_blank" rel="noopener noreferrer">THETYS</a> <span class="work-duration">February 2019 - March 2022</span>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
+                            <a href="https://www.thetysmyanmar.com" target="_blank" rel="noopener noreferrer">THETYS</a> Co., Ltd
                         </div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size:large; line-height: 1;">* February 2019 - February 2020</div>
-                        <div style="flex: none; margin: 0; padding: 0; font-size:small; line-height: 1;">
-                            <ul>
-                                <li>Develop websites using HTML5, CSS3, JavaScript, Vue.js, ASP .NET, .NET MVC5, EF, etc...</li>
-                                <li>Develop Web APIs .NET Core, EF Core and LINQ.</li>
-                                <li>Participate in 5 software development.</li>
-                            </ul>
-                        </div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size:large; line-height: 1;">* March 2020 - April 2022</div>
-                        <div style="flex: none; margin: 0; padding: 0; font-size:small; line-height: 1;">
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Assistant Lead</div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* March 2020 - April 2022</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
                             <ul>
                                 <li>Work on two projects as Assistant Lead.</li>
                                 <li>Lead team of up to 5 members undertaking the full Software Cycle.</li>
@@ -210,6 +257,15 @@
                                 <li>Familiar with Google APIs, Firebase.</li>
                                 <li>Manage the App Service and Database over Microsoft Azure
                                     Portal.</li>
+                            </ul>
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Web Developer</div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* February 2019 - February 2020</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
+                            <ul>
+                                <li>Develop websites using HTML5, CSS3, JavaScript, Vue.js, ASP .NET, .NET MVC5, EF, etc...</li>
+                                <li>Develop Web APIs .NET Core, EF Core and LINQ.</li>
+                                <li>Participate in 5 software development.</li>
                             </ul>
                         </div>
                     </div>
