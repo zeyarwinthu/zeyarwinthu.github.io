@@ -1,330 +1,540 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Zeyar Win Thu - Backend developer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeyar Win Thu - Full-Stack Developer</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0F172A;
+            --primary-dark: #1E3A8A;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --bg-light: #f9fafb;
+            --border: #e5e7eb;
+        }
 
         body {
-        background-color: #d5dbdb;
-        }
-       /* Add a black background color to the top navigation */
-        .topnav {
-        background-color: transparent;
-        overflow: hidden;
-        display: flex;
-        justify-content: space-between;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
         }
 
-        /* Style the links inside the navigation bar */
-        .topnav a {
-        float: left;
-        display: block;
-        color: #5d6d7e;
-        text-align: center;
-        padding: 14px 16px;
-        text-decoration: none;
-        font-size: 17px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
 
-        /* Change the color of links on hover */
-        .topnav a:hover {
-        background-color: #808b96;
-        border-radius: 10%;
-        color: #f2f3f4;
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
         }
 
-        /* Add an active class to highlight the current page */
-        .topnav a.active {
-        background-color: #abebc6;
-        border-radius: 10%;
-        color: #eaeded;
-        font-weight: bold;
-        }
-        .zeyar:hover {
-        color: #abb2b9 !important;
-        font-weight: bold !important;
-        background-color: transparent !important;
+        header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            animation: fadeInUp 0.8s ease;
         }
 
-        /* Hide the link that should open and close the topnav on small screens */
-        .topnav .icon {
-        display: none;
+        header .subtitle {
+            font-size: 1.5rem;
+            opacity: 0.95;
+            margin-bottom: 10px;
+            animation: fadeInUp 1s ease;
         }
-        .topnav a.split {
-        float: right;
-        font-size: x-large;
+
+        header .location {
+            font-size: 1.1rem;
+            opacity: 0.85;
+            animation: fadeInUp 1.2s ease;
         }
-        .topnav a.zeyar {
-        float: left;
-        font-size: x-large;
+        header .email {
+            font-size: 1.1rem;
+            opacity: 0.85;
+            font-style: italic;
+            animation: fadeInUp 1.2s ease;
         }
-        .right-links {
-        display: flex;
-        gap: 10px; /* Optional: adds space between the links */
+
+        /* Navigation */
+        nav {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        * {
-        color:  #5d6d7e;
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            padding: 15px 0;
         }
-        .name-style{
-            color:#2e4053;
+
+        nav a {
+            color: var(--text-dark);
+            text-decoration: none;
+            padding: 10px 25px;
+            transition: color 0.3s;
+            font-weight: 500;
         }
-        .home-body{
-            padding-top:20vh;
-            padding-left: 60px;
-            padding-right: 60px;
-            margin-left:auto;
-            display:block;
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        /* Section Styles */
+        section {
+            padding: 60px 0;
+        }
+
+        section:nth-child(even) {
+            background: var(--bg-light);
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            text-align: center;
+            color: var(--text-dark);
             position: relative;
-            font-size: 40px;
-            line-height: 40px;
-        }
-        .typing-effect {
-            font-family: Arial, Helvetica, sans-serif; /* Optional: to mimic a typewriter font */
-            font-size: 35px; /* Adjust font size as needed */
-            white-space: nowrap; /* Prevent text from wrapping */
-            overflow: hidden; /* Hide the overflow to keep the text inside the container */
-            width: 0;
-            animation: typing 6s steps(30, end) forwards, blink-caret 0.75s step-end infinite, cursor-fade 5s forwards;
-            margin-bottom: 0; /* Remove bottom margin */
-        }
-        .rotating-list-container {
-            font-size: 30px;
-            color: #2e4053;
-            text-align: left;
-            height: 40px; /* Adjust based on font size */
-            overflow: hidden;
         }
 
-        .rotating-list {
-            animation: fadeInOut 2s infinite;
-        }
-        .rotating-list span {
-            background-color: #2e4053;
-            color: #fff;
-            padding: 2px 5px; /* Adjust padding to control background size */
-        }
-        .home-body p {
-            margin-top: 0; /* Remove top margin */
-            margin-bottom: 0; /* Remove bottom margin */
-            line-height: 1.5; /* Adjust line height if needed */
-        }
-        .company-logo {
-        width: 100px;
-        height: 100px;
-        border-radius: 15%;
-        border: #2e4053 solid 2px;
-        align-items: start;
-        }
-        .spacing-tab{
-            padding-top:10vh;
-        }
-        .work-duration{
-            font-size:x-large;
-            color:#808b96;
-        }
-        @media (max-width: 768px) { /* Tablet and smaller screens */
-            .company-logo {
-                width: 50px;
-                height: 50px;
-            }
-        }
-        @media (max-width: 480px) { /* Mobile screens */
-            .company-logo {
-                width: 20px;
-                height: 20px;
-            }
-        }
-        @keyframes typing {
-            from { width: 0; }
-            to { width: 100%; }
-        }
-        @keyframes blink-caret {
-            from, to { border-color: transparent; }
-            50% { border-color: black; }
-        }
-        @keyframes cursor-fade {
-            0% { border-color: black; }
-            99% { border-color: black; }
-            100% { border-color: transparent; }
-        }
-        @keyframes fadeInOut {
-            0% { opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { opacity: 0; }
+        h2::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: var(--primary);
+            margin: 15px auto 0;
         }
 
+        /* Skills */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .skill-category {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .skill-category:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .skill-category h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .skill-category ul {
+            list-style: none;
+        }
+
+        .skill-category li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-light);
+        }
+
+        .skill-category li:last-child {
+            border-bottom: none;
+        }
+
+        /* Experience */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--primary);
+        }
+
+        .job {
+            position: relative;
+            margin-bottom: 50px;
+            padding: 25px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .job::before {
+            content: '';
+            position: absolute;
+            left: -48px;
+            top: 25px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 4px solid white;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .job h3 {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .job .company {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .job .period {
+            color: var(--text-light);
+            font-style: italic;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .job ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .job li {
+            padding: 8px 0;
+            color: var(--text-light);
+            position: relative;
+        }
+
+        .job li::before {
+            content: '▹';
+            position: absolute;
+            left: -20px;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Education */
+        .education {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .education h3 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .education .degree {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .education .university {
+            color: var(--text-light);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--text-dark);
+            color: white;
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            header .subtitle {
+                font-size: 1.2rem;
+            }
+
+            nav ul {
+                flex-wrap: wrap;
+            }
+
+            nav a {
+                padding: 8px 15px;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
+
+            .timeline {
+                padding-left: 30px;
+            }
+
+            .job::before {
+                left: -38px;
+            }
+        }
     </style>
 </head>
 <body>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <div class="topnav" id="myTopnav">
-        <a href="#home" class="zeyar">Zeyar <i class="fa fa-fw fa-home"></i></a>
-        <div class="right-links">
-            <a href="#work" class="split">Work</a>
-            <a href="#about" class="split">About</a>
-            <a href="#contact" class="split">GET IN TOUCH</a>
-            <a href="javascript:void(0);" class="icon" onclick="myFunction()">
-                <i class="fa fa-bars"></i>
-            </a>
+    <header>
+        <div class="container">
+            <h1>Zeyar Win Thu</h1>
+            <p class ="email">📧 official.zeyarwinthu@gmail.com</p>
+            <p class="subtitle">Full-Stack Developer | Backend Specialist</p>
+            <p class="location">📍 Tokyo, Japan</p>
         </div>
-    </div>
-    <div class="home-body">
-        <div class="typing-effect">
-            Hello. I am <span class="name-style"> Zeyar Win Thu.</span>
-                You can call me <span class="name-style">Zeyar</span>.
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#skills">Skills</a></li>
+            <li><a href="#experience">Experience</a></li>
+            <li><a href="#education">Education</a></li>
+        </ul>
+    </nav>
+
+    <section id="about">
+        <div class="container">
+            <h2>About Me</h2>
+            <p style="text-align: center; max-width: 800px; margin: 0 auto; font-size: 1.1rem; color: var(--text-light);">
+                Full-stack developer with 5+ years of experience. 
+                I specialize in backend engineering using .NET technologies, and I enjoy building scalable, 
+                high-performance applications that solve real-world problems. My experience spans from web and mobile development to cloud services 
+                and distributed systems, with a focus on clean architecture, automation, and efficient system design.
+            </p>
         </div>
-        <p>
-            I am a full-stack developer with 5+ years of experience, <br/>
-            specializing in backend development living in Tokyo, Japan. <br/>
-            <!-- Currently I work at <a href="https://www.rezerv.co/" target="_blank" rel="noopener noreferrer">Rezerv</a>, <br/>
-            Service Business Management Software <br/>
-            for your
-            <div class="rotating-list-container">
-                <div id="rotating-list" class="rotating-list"><span></span></div>
-            </div> -->
-        </p>
-        <div class="spacing-tab"></div>
-        <div id="technicalskill">
-            <h3>Technical Skills</h3>
-            <div style="display: flex; flex-direction: column; width: 100%;">
-                <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 2;">
-                <ul>
-                    <li>Frontend: HTML5, CSS3, JavaScript, jQuery, Vue.js, Angular</li>
-                    <li>Backend: C#, ASP.NET MVC5, .NET Core, Entity Framework, EF Core, LINQ</li>
-                    <li>Mobile Development: Xamarin</li>
-                    <li>Database: MySQL, SQL Server</li>
-                    <li>Cloud & DevOps: Microsoft Azure, AWS CloudWatch, Git</li>
-                    <li>Tools & Libraries: RedLock, Hangfire, Automapper, Log4Net</li>
-                    <li>APIs & Services: RESTful API, Google APIs, Firebase</li>
-                    <li>Development Methodologies: Repository Pattern, Agile</li>
-                </ul>
-            </div>
-            </div>
-        </div>
-        <div class="spacing-tab"></div>
-        <div id="work">
-            <h3>Work Experience</h3>
-            <div style="display: flex; flex-direction: column; width: 100%;">
-                <div style="display: flex;">
-                    <div style="flex: none; padding-right: 3%;">
-                        <img src="rezerv-logo.png" class="company-logo"/>
-                    </div>
-                    <div style="flex: 2; display: flex; flex-direction: column;">
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
-                            <a href="https://www.rezerv.co" target="_blank" rel="noopener noreferrer">REZERV</a> Co., Ltd
-                        </div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Senior Backend Developer</div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* October 2022 - January 2024</div>
-                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
-                            <ul>
-                                <li>Developed and maintained backend services for rezerv.co using .NET 6.</li>
-                                <li>Implemented Hangfire for background job processing and Log4Net for logging.</li>
-                                <li>Used RedLock for distributed locking mechanisms to ensure data consistency.</li>
-                                <li>Applied Automapper for efficient object mapping and transformation.</li>
-                                <li>Monitored performance and logs via AWS CloudWatch.</li>
-                            </ul>
-                        </div>
-                    </div>
+    </section>
+
+    <section id="skills">
+        <div class="container">
+            <h2>Technical Skills</h2>
+            <div class="skills-grid">
+                <div class="skill-category">
+                    <h3>Frontend</h3>
+                    <ul>
+                        <li>HTML5, CSS3</li>
+                        <li>JavaScript, jQuery</li>
+                        <li>Vue.js</li>
+                        <li>Angular</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>Backend</h3>
+                    <ul>
+                        <li>C#</li>
+                        <li>ASP.NET MVC5</li>
+                        <li>.NET Core</li>
+                        <li>Entity Framework, EF Core</li>
+                        <li>LINQ</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>Mobile & Database</h3>
+                    <ul>
+                        <li>Xamarin</li>
+                        <li>MySQL</li>
+                        <li>SQL Server</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>Cloud & DevOps</h3>
+                    <ul>
+                        <li>Microsoft Azure</li>
+                        <li>AWS</li>
+                        <li>Git</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>Tools & Libraries</h3>
+                    <ul>
+                        <li>RedLock</li>
+                        <li>Hangfire</li>
+                        <li>Automapper</li>
+                        <li>Log4Net</li>
+                    </ul>
+                </div>
+                <div class="skill-category">
+                    <h3>APIs & Methodologies</h3>
+                    <ul>
+                        <li>RESTful API</li>
+                        <li>Google APIs, Firebase</li>
+                        <li>Repository Pattern</li>
+                        <li>Agile</li>
+                    </ul>
                 </div>
             </div>
-            <div style="display: flex; flex-direction: column; width: 100%;">
-                <div style="display: flex;">
-                    <div style="flex: none; padding-right: 3%;">
-                        <img src="unifine-logo.png" class="company-logo"/>
-                    </div>
-                    <div style="flex: 2; display: flex; flex-direction: column;">
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
-                            UNIFINE Co., Ltd
-                        </div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Senior .NET Developer</div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* April 2022 - September 2022</div>
-                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
-                            <ul>
-                                <li>Take care web project using angular and API using .NET Core</li>
-                                <li>Maintain the window server (2019)</li>
-                                <li>Familiar with 3rd party APIs such as OneSignal, Google...</li>
-                            </ul>
-                        </div>
-                    </div>
+        </div>
+    </section>
+
+    <section id="experience">
+        <div class="container">
+            <h2>Work Experience</h2>
+            <div class="timeline">
+                <div class="job">
+                    <h3>Senior Backend Developer</h3>
+                    <div class="company">REZERV Co., Ltd</div>
+                    <span class="period">October 2022 - January 2024</span>
+                    <ul>
+                        <li>Developed and maintained backend services for rezerv.co using .NET 6</li>
+                        <li>Implemented Hangfire for background job processing and Log4Net for logging</li>
+                        <li>Used RedLock for distributed locking mechanisms to ensure data consistency</li>
+                        <li>Applied Automapper for efficient object mapping and transformation</li>
+                        <li>Monitored performance and logs via AWS CloudWatch</li>
+                    </ul>
                 </div>
-            </div>
-            <div style="display: flex; flex-direction: column; width: 100%;">
-                <div style="display: flex;">
-                    <div style="flex: none; padding-right: 3%;">
-                        <img src="cropped-thetys-logo.jpg" class="company-logo"/>
-                    </div>
-                    <div style="flex: 2; display: flex; flex-direction: column;">
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
-                            <a href="https://www.thetysmyanmar.com" target="_blank" rel="noopener noreferrer">THETYS</a> Co., Ltd
-                        </div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Assistant Lead</div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* March 2020 - April 2022</div>
-                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
-                            <ul>
-                                <li>Work on two projects as Assistant Lead.</li>
-                                <li>Lead team of up to 5 members undertaking the full Software Cycle.</li>
-                                <li>Analyze and assign the tasks for members.</li>
-                                <li>Design and apply the database.</li>
-                                <li>Develop mobile application using xamarin and Repository
-                                    pattern REST APIs.</li>
-                                <li>Familiar with Google APIs, Firebase.</li>
-                                <li>Manage the App Service and Database over Microsoft Azure
-                                    Portal.</li>
-                            </ul>
-                        </div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Web Developer</div>
-                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* February 2019 - February 2020</div>
-                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
-                            <ul>
-                                <li>Develop websites using HTML5, CSS3, JavaScript, Vue.js, ASP .NET, .NET MVC5, EF, etc...</li>
-                                <li>Develop Web APIs .NET Core, EF Core and LINQ.</li>
-                                <li>Participate in 5 software development.</li>
-                            </ul>
-                        </div>
-                    </div>
+
+                <div class="job">
+                    <h3>Senior .NET Developer</h3>
+                    <div class="company">UNIFINE Co., Ltd</div>
+                    <span class="period">April 2022 - September 2022</span>
+                    <ul>
+                        <li>Managed web project using Angular and API using .NET Core</li>
+                        <li>Maintained Windows Server (2019)</li>
+                        <li>Integrated 3rd party APIs such as OneSignal, Google APIs</li>
+                    </ul>
                 </div>
-            </div>
-        </div>        
-        <div class="spacing-tab"></div>
-        <div id="technicalskill">
-            <h3>Education</h3>
-            <div style="display: flex; flex-direction: column; width: 100%;">
-                <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">🎓 Bachelor of Computer Science (B.C.Sc)</div>
-                <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">University of Computer Studies, Monywa</div>
-            </div>
+
+                <div class="job">
+                    <h3>Assistant Lead</h3>
+                    <div class="company">THETYS Co., Ltd</div>
+                    <span class="period">March 2020 - April 2022</span>
+                    <ul>
+                        <li>Led team of up to 5 members undertaking the full Software Development Cycle</li>
+                        <li>Analyzed and assigned tasks for team members</li>
+                        <li>Designed and implemented database architecture</li>
+                        <li>Developed mobile applications using Xamarin and Repository pattern REST APIs</li>
+                        <li>Integrated Google APIs and Firebase</li>
+                        <li>Managed App Service and Database over Microsoft Azure Portal</li>
+                    </ul>
+                </div>
+
+                <div class="job">
+                    <h3>Web Developer</h3>
+                    <div class="company">THETYS Co., Ltd</div>
+                    <span class="period">February 2019 - February 2020</span>
+                    <ul>
+                        <li>Developed websites using HTML5, CSS3, JavaScript, Vue.js, ASP.NET, .NET MVC5, EF</li>
+                        <li>Built Web APIs using .NET Core, EF Core and LINQ</li>
+                        <li>Participated in 5 software development projects</li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <section id="education">
+        <div class="container">
+            <h2>Education</h2>
+            <div class="education">
+                <h3>🎓 Bachelor of Computer Science</h3>
+                <p class="degree">(B.C.Sc)</p>
+                <p class="university">University of Computer Studies, Monywa</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Zeyar Win Thu. All rights reserved.</p>
+        </div>
+    </footer>
+
     <script>
-        const listItems = [
-            "Boutique Fitness Studio",
-            "Yoga Studio",
-            "Gym",
-            "Personal Trainer",
-            "Dance Studio",
-            "MMA Club",
-            "Sports Facility",
-            "Beauty Salon",
-            "Music School",
-            "Tuition Center",
-            "EMS Studio",
-            "Pilates Studio",
-            "Spin Studio",
-            "Equipment Rental"
-        ];
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('nav a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
 
-        let currentIndex = 0;
-        const rotatingList = document.getElementById('rotating-list').querySelector('span');
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
 
-        function rotateList() {
-            rotatingList.textContent = listItems[currentIndex];
-            currentIndex = (currentIndex + 1) % listItems.length;
-        }
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        }, observerOptions);
 
-        // Start the rotation
-        rotateList();
-        setInterval(rotateList, 2000); // Change every 2 seconds
+        // Observe all skill categories and job entries
+        document.querySelectorAll('.skill-category, .job, .education').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Active nav link on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('nav a');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (scrollY >= sectionTop - 200) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.style.color = '';
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.style.color = 'var(--primary)';
+                }
+            });
+        });
     </script>
 </body>
 </html>

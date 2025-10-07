@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zeyar Win Thu - Backend developer</title>
+    <style>
+
+        body {
+        background-color: #d5dbdb;
+        }
+       /* Add a black background color to the top navigation */
+        .topnav {
+        background-color: transparent;
+        overflow: hidden;
+        display: flex;
+        justify-content: space-between;
+        }
+
+        /* Style the links inside the navigation bar */
+        .topnav a {
+        float: left;
+        display: block;
+        color: #5d6d7e;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+        font-size: 17px;
+        }
+
+        /* Change the color of links on hover */
+        .topnav a:hover {
+        background-color: #808b96;
+        border-radius: 10%;
+        color: #f2f3f4;
+        }
+
+        /* Add an active class to highlight the current page */
+        .topnav a.active {
+        background-color: #abebc6;
+        border-radius: 10%;
+        color: #eaeded;
+        font-weight: bold;
+        }
+        .zeyar:hover {
+        color: #abb2b9 !important;
+        font-weight: bold !important;
+        background-color: transparent !important;
+        }
+
+        /* Hide the link that should open and close the topnav on small screens */
+        .topnav .icon {
+        display: none;
+        }
+        .topnav a.split {
+        float: right;
+        font-size: x-large;
+        }
+        .topnav a.zeyar {
+        float: left;
+        font-size: x-large;
+        }
+        .right-links {
+        display: flex;
+        gap: 10px; /* Optional: adds space between the links */
+        }
+        * {
+        color:  #5d6d7e;
+        }
+        .name-style{
+            color:#2e4053;
+        }
+        .home-body{
+            padding-top:20vh;
+            padding-left: 60px;
+            padding-right: 60px;
+            margin-left:auto;
+            display:block;
+            position: relative;
+            font-size: 40px;
+            line-height: 40px;
+        }
+        .typing-effect {
+            font-family: Arial, Helvetica, sans-serif; /* Optional: to mimic a typewriter font */
+            font-size: 35px; /* Adjust font size as needed */
+            white-space: nowrap; /* Prevent text from wrapping */
+            overflow: hidden; /* Hide the overflow to keep the text inside the container */
+            width: 0;
+            animation: typing 6s steps(30, end) forwards, blink-caret 0.75s step-end infinite, cursor-fade 5s forwards;
+            margin-bottom: 0; /* Remove bottom margin */
+        }
+        .rotating-list-container {
+            font-size: 30px;
+            color: #2e4053;
+            text-align: left;
+            height: 40px; /* Adjust based on font size */
+            overflow: hidden;
+        }
+
+        .rotating-list {
+            animation: fadeInOut 2s infinite;
+        }
+        .rotating-list span {
+            background-color: #2e4053;
+            color: #fff;
+            padding: 2px 5px; /* Adjust padding to control background size */
+        }
+        .home-body p {
+            margin-top: 0; /* Remove top margin */
+            margin-bottom: 0; /* Remove bottom margin */
+            line-height: 1.5; /* Adjust line height if needed */
+        }
+        .company-logo {
+        width: 100px;
+        height: 100px;
+        border-radius: 15%;
+        border: #2e4053 solid 2px;
+        align-items: start;
+        }
+        .spacing-tab{
+            padding-top:10vh;
+        }
+        .work-duration{
+            font-size:x-large;
+            color:#808b96;
+        }
+        @media (max-width: 768px) { /* Tablet and smaller screens */
+            .company-logo {
+                width: 50px;
+                height: 50px;
+            }
+        }
+        @media (max-width: 480px) { /* Mobile screens */
+            .company-logo {
+                width: 20px;
+                height: 20px;
+            }
+        }
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: black; }
+        }
+        @keyframes cursor-fade {
+            0% { border-color: black; }
+            99% { border-color: black; }
+            100% { border-color: transparent; }
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <div class="topnav" id="myTopnav">
+        <a href="#home" class="zeyar">Zeyar <i class="fa fa-fw fa-home"></i></a>
+        <div class="right-links">
+            <a href="#work" class="split">Work</a>
+            <a href="#about" class="split">About</a>
+            <a href="#contact" class="split">GET IN TOUCH</a>
+            <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+                <i class="fa fa-bars"></i>
+            </a>
+        </div>
+    </div>
+    <div class="home-body">
+        <div class="typing-effect">
+            Hello. I am <span class="name-style"> Zeyar Win Thu.</span>
+                You can call me <span class="name-style">Zeyar</span>.
+        </div>
+        <p>
+            I am a full-stack developer with 5+ years of experience, <br/>
+            specializing in backend development living in Tokyo, Japan. <br/>
+            <!-- Currently I work at <a href="https://www.rezerv.co/" target="_blank" rel="noopener noreferrer">Rezerv</a>, <br/>
+            Service Business Management Software <br/>
+            for your
+            <div class="rotating-list-container">
+                <div id="rotating-list" class="rotating-list"><span></span></div>
+            </div> -->
+        </p>
+        <div class="spacing-tab"></div>
+        <div id="technicalskill">
+            <h3>Technical Skills</h3>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 2;">
+                <ul>
+                    <li>Frontend: HTML5, CSS3, JavaScript, jQuery, Vue.js, Angular</li>
+                    <li>Backend: C#, ASP.NET MVC5, .NET Core, Entity Framework, EF Core, LINQ</li>
+                    <li>Mobile Development: Xamarin</li>
+                    <li>Database: MySQL, SQL Server</li>
+                    <li>Cloud & DevOps: Microsoft Azure, AWS CloudWatch, Git</li>
+                    <li>Tools & Libraries: RedLock, Hangfire, Automapper, Log4Net</li>
+                    <li>APIs & Services: RESTful API, Google APIs, Firebase</li>
+                    <li>Development Methodologies: Repository Pattern, Agile</li>
+                </ul>
+            </div>
+            </div>
+        </div>
+        <div class="spacing-tab"></div>
+        <div id="work">
+            <h3>Work Experience</h3>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div style="display: flex;">
+                    <div style="flex: none; padding-right: 3%;">
+                        <img src="rezerv-logo.png" class="company-logo"/>
+                    </div>
+                    <div style="flex: 2; display: flex; flex-direction: column;">
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
+                            <a href="https://www.rezerv.co" target="_blank" rel="noopener noreferrer">REZERV</a> Co., Ltd
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Senior Backend Developer</div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* October 2022 - January 2024</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
+                            <ul>
+                                <li>Developed and maintained backend services for rezerv.co using .NET 6.</li>
+                                <li>Implemented Hangfire for background job processing and Log4Net for logging.</li>
+                                <li>Used RedLock for distributed locking mechanisms to ensure data consistency.</li>
+                                <li>Applied Automapper for efficient object mapping and transformation.</li>
+                                <li>Monitored performance and logs via AWS CloudWatch.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div style="display: flex;">
+                    <div style="flex: none; padding-right: 3%;">
+                        <img src="unifine-logo.png" class="company-logo"/>
+                    </div>
+                    <div style="flex: 2; display: flex; flex-direction: column;">
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
+                            UNIFINE Co., Ltd
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Senior .NET Developer</div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* April 2022 - September 2022</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
+                            <ul>
+                                <li>Take care web project using angular and API using .NET Core</li>
+                                <li>Maintain the window server (2019)</li>
+                                <li>Familiar with 3rd party APIs such as OneSignal, Google...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div style="display: flex;">
+                    <div style="flex: none; padding-right: 3%;">
+                        <img src="cropped-thetys-logo.jpg" class="company-logo"/>
+                    </div>
+                    <div style="flex: 2; display: flex; flex-direction: column;">
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 15px; font-size: xx-large;">
+                            <a href="https://www.thetysmyanmar.com" target="_blank" rel="noopener noreferrer">THETYS</a> Co., Ltd
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Assistant Lead</div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* March 2020 - April 2022</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
+                            <ul>
+                                <li>Work on two projects as Assistant Lead.</li>
+                                <li>Lead team of up to 5 members undertaking the full Software Cycle.</li>
+                                <li>Analyze and assign the tasks for members.</li>
+                                <li>Design and apply the database.</li>
+                                <li>Develop mobile application using xamarin and Repository
+                                    pattern REST APIs.</li>
+                                <li>Familiar with Google APIs, Firebase.</li>
+                                <li>Manage the App Service and Database over Microsoft Azure
+                                    Portal.</li>
+                            </ul>
+                        </div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">Web Developer</div>
+                        <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">* February 2019 - February 2020</div>
+                        <div style="flex: none; margin: 0; padding: 0; font-size:large; line-height: 1;">
+                            <ul>
+                                <li>Develop websites using HTML5, CSS3, JavaScript, Vue.js, ASP .NET, .NET MVC5, EF, etc...</li>
+                                <li>Develop Web APIs .NET Core, EF Core and LINQ.</li>
+                                <li>Participate in 5 software development.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>        
+        <div class="spacing-tab"></div>
+        <div id="technicalskill">
+            <h3>Education</h3>
+            <div style="display: flex; flex-direction: column; width: 100%;">
+                <div style="flex: none; margin: 0; padding: 0; padding-bottom: 5px; font-size: x-large; line-height: 1;">🎓 Bachelor of Computer Science (B.C.Sc)</div>
+                <div style="flex: none; margin: 0; padding: 0; padding-bottom: 0; font-size: large; line-height: 1;">University of Computer Studies, Monywa</div>
+            </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const listItems = [
+            "Boutique Fitness Studio",
+            "Yoga Studio",
+            "Gym",
+            "Personal Trainer",
+            "Dance Studio",
+            "MMA Club",
+            "Sports Facility",
+            "Beauty Salon",
+            "Music School",
+            "Tuition Center",
+            "EMS Studio",
+            "Pilates Studio",
+            "Spin Studio",
+            "Equipment Rental"
+        ];
+
+        let currentIndex = 0;
+        const rotatingList = document.getElementById('rotating-list').querySelector('span');
+
+        function rotateList() {
+            rotatingList.textContent = listItems[currentIndex];
+            currentIndex = (currentIndex + 1) % listItems.length;
+        }
+
+        // Start the rotation
+        rotateList();
+        setInterval(rotateList, 2000); // Change every 2 seconds
+    </script>
+</body>
+</html>
