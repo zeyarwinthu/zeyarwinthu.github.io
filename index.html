@@ -4,64 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zeyar Win Thu - Senior Backend Developer</title>
+    <meta name="description" content="Portfolio of Zeyar Win Thu, a Senior Backend Developer specializing in .NET, cloud services, and full-stack development.">
+    <meta name="keywords" content="Zeyar Win Thu, Backend Developer, .NET, C#, ASP.NET Core, Azure, AWS">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
+        /* CSS Reset and Base Styles */
+        *, *::before, *::after {
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #000000;
-            --secondary: #808080;
-            --accent: #ec4899;
-            --dark: #0f172a;
-            --light: #f1f5f9;
-            --text: #1e293b;
-            --text-muted: #64748b;
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
+            margin: 0;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #000000;
-            color: #ffffff;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
             overflow-x: hidden;
         }
 
-        .day-mode body {
-            background: #ffffff;
-            color: #000000;
+        /* CSS Custom Properties for Themes */
+        :root {
+            /* Dark Mode (Default) */
+            --primary-color: #000000;
+            --secondary-color: #808080;
+            --accent-color: #ec4899;
+            --bg-color: #000000;
+            --section-bg: #000000;
+            --card-bg: #333333;
+            --text-color: #ffffff;
+            --text-muted: #cccccc;
+            --text-dark: #000000;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow: rgba(0, 0, 0, 0.3);
+            --hero-gradient: linear-gradient(180deg, #ff7e5f 0%, #feb47b 50%, #87ceeb 100%);
+            --mountain-gradient: linear-gradient(to top, #4a5568 0%, #2d3748 50%, #1a202c 100%);
         }
 
+        .light-mode {
+            /* Light Mode */
+            --bg-color: #ffffff;
+            --section-bg: #ffffff;
+            --card-bg: #f8f9fa;
+            --text-color: #000000;
+            --text-muted: #666666;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --shadow: rgba(255, 255, 255, 0.8);
+            --hero-gradient: linear-gradient(180deg, #87ceeb 0%, #b0e0e6 50%, #ffffff 100%);
+            --mountain-gradient: linear-gradient(to top, #a0aec0 0%, #718096 50%, #4a5568 100%);
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            margin: 0;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        h1 { font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 800; }
+        h2 { font-size: clamp(2rem, 4vw, 3rem); }
+        h3 { font-size: clamp(1.5rem, 3vw, 2rem); }
+        p { margin: 0 0 1rem 0; }
+
+        /* Layout */
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 1rem;
         }
 
-        /* Animated Background */
+        /* Header/Hero Section */
         .hero {
-            min-height: 100vh;
             position: relative;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(180deg, #ff7e5f 0%, #feb47b 50%, #87ceeb 100%);
+            background: var(--hero-gradient);
             background-size: 100% 300%;
             animation: skyCycle 30s ease-in-out infinite;
             overflow: hidden;
-        }
-
-        .day-mode .hero {
-            background: linear-gradient(180deg, #87ceeb 0%, #b0e0e6 50%, #ffffff 100%);
-            animation: skyCycleDay 30s ease-in-out infinite;
-        }
-
-        @keyframes skyCycleDay {
-            0% { background-position: 0% 0%; }
-            33% { background-position: 0% 50%; }
-            66% { background-position: 0% 100%; }
-            100% { background-position: 0% 0%; }
         }
 
         @keyframes skyCycle {
@@ -71,7 +99,7 @@
             100% { background-position: 0% 0%; }
         }
 
-        .landscape {
+        .hero__landscape {
             position: absolute;
             bottom: 0;
             left: 0;
@@ -85,220 +113,88 @@
             bottom: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to top, #4a5568 0%, #2d3748 50%, #1a202c 100%);
+            background: var(--mountain-gradient);
         }
 
-        .day-mode .mountain {
-            background: linear-gradient(to top, #a0aec0 0%, #718096 50%, #4a5568 100%);
-        }
-
-        .mountain.back {
+        .mountain--back {
             clip-path: polygon(0 100%, 20% 70%, 40% 80%, 60% 60%, 80% 75%, 100% 100%);
             opacity: 0.6;
             filter: blur(1px);
         }
 
-        .mountain.middle {
+        .mountain--middle {
             clip-path: polygon(0 100%, 30% 50%, 50% 70%, 70% 40%, 90% 60%, 100% 100%);
             opacity: 0.8;
             filter: blur(0.5px);
         }
 
-        .mountain.front {
+        .mountain--front {
             clip-path: polygon(0 100%, 25% 30%, 45% 50%, 65% 20%, 85% 40%, 100% 100%);
             opacity: 1;
         }
 
-        .tree {
-            position: absolute;
-            bottom: 20%;
-            left: 70%;
-            width: 60px;
-            height: 120px;
-            animation: sway 4s ease-in-out infinite;
-        }
-
-        .tree::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 8px;
-            height: 60px;
-            background: #8b4513;
-            transform: translateX(-50%);
-            border-radius: 4px 4px 0 0;
-        }
-
-        .tree::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-left: 25px solid transparent;
-            border-right: 25px solid transparent;
-            border-bottom: 60px solid #228b22;
-            transform: translateX(-50%);
-        }
-
-        .sun {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            background: radial-gradient(circle, #e0e0e0 0%, #b0b0b0 50%, #808080 100%);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5), inset -10px -10px 20px rgba(0, 0, 0, 0.2);
-            border-radius: 50%;
-            z-index: 2;
-            animation: sunMove 30s ease-in-out infinite;
-        }
-
-        .day-mode .sun {
-            background: radial-gradient(circle, #ffd700 0%, #ffa500 70%, transparent 100%);
-        }
-
-        @keyframes sunMove {
-            0% { left: -10%; top: 25%; }
-            33% { left: 45%; top: 10%; }
-            66% { left: 100%; top: 20%; }
-            100% { left: 110%; top: 30%; }
-        }
-
-        .tree-shadow {
-            position: absolute;
-            bottom: 18%;
-            left: 70%;
-            width: 80px;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 50%;
-            transform: translateX(-50%) scaleX(1);
-            animation: shadowMove 30s ease-in-out infinite;
-        }
-
-        @keyframes shadowMove {
-            0%, 100% { transform: translateX(-50%) scaleX(2) scaleY(0.5); }
-            33% { transform: translateX(-50%) scaleX(1) scaleY(0.8); }
-            66% { transform: translateX(-50%) scaleX(1.5) scaleY(0.6); }
-        }
-
-        .mountain-shadow {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60%;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.2) 0%, transparent 50%);
-            z-index: 1;
-            animation: mountainShadow 30s ease-in-out infinite;
-        }
-
-        @keyframes mountainShadow {
-            0%, 100% { opacity: 0.4; }
-            33% { opacity: 0.1; }
-            66% { opacity: 0.3; }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(120deg); }
-            66% { transform: translate(-20px, 20px) rotate(240deg); }
-        }
-
-        .hero-content {
+        .hero__content {
             position: relative;
             z-index: 2;
             text-align: center;
-            color: #ffffff;
+            color: var(--text-color);
             animation: fadeInUp 1s ease-out;
         }
 
-        .day-mode .hero-content {
-            color: #000000;
-        }
-
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .hero-badge {
+        .hero__badge {
             display: inline-block;
-            padding: 8px 20px;
+            padding: 0.5rem 1.25rem;
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(10px);
             border-radius: 50px;
-            font-size: 0.9em;
-            margin-bottom: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
             animation: slideInDown 0.8s ease-out 0.2s both;
-            color: #d1d5db;
         }
 
         @keyframes slideInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .hero h1 {
-            font-size: 4.5em;
-            font-weight: 800;
-            margin-bottom: 20px;
-            color: #f4f6f8;
+        .hero__title {
+            margin-bottom: 1.25rem;
+            color: var(--text-color);
             -webkit-text-stroke: 2px rgba(255, 255, 255, 0.3);
             animation: fadeInUp 1s ease-out 0.3s both, nameColorCycle 30s ease-in-out infinite;
         }
 
         @keyframes nameColorCycle {
-            0% { 
-                color: #ff9a76;
-                -webkit-text-stroke: 2px rgba(255, 126, 95, 0.4);
-            }
-            33% { 
-                color: #080700;
-                -webkit-text-stroke: 2px rgba(255, 215, 0, 0.5);
-            }
-            66% { 
-                color: #6b8f9e;
-                -webkit-text-stroke: 2px rgba(135, 206, 235, 0.4);
-            }
-            100% { 
-                color: #b7988d;
-                -webkit-text-stroke: 2px rgba(255, 126, 95, 0.4);
-            }
+            0% { color: #ff9a76; -webkit-text-stroke: 2px rgba(255, 126, 95, 0.4); }
+            33% { color: #080700; -webkit-text-stroke: 2px rgba(255, 215, 0, 0.5); }
+            66% { color: #6b8f9e; -webkit-text-stroke: 2px rgba(135, 206, 235, 0.4); }
+            100% { color: #b7988d; -webkit-text-stroke: 2px rgba(255, 126, 95, 0.4); }
         }
 
-        .hero .subtitle {
-            font-size: 1.8em;
-            margin-bottom: 30px;
+        .hero__subtitle {
+            font-size: 1.25rem;
+            margin-bottom: 1.875rem;
             opacity: 0.95;
             animation: fadeInUp 1s ease-out 0.5s both;
         }
 
-        .hero-buttons {
+        .hero__buttons {
             display: flex;
-            gap: 20px;
+            gap: 1.25rem;
             justify-content: center;
             flex-wrap: wrap;
             animation: fadeInUp 1s ease-out 0.7s both;
         }
 
         .btn {
-            padding: 15px 35px;
+            padding: 0.9375rem 2.1875rem;
             border-radius: 50px;
-            font-size: 1.1em;
+            font-size: 1.1rem;
             font-weight: 600;
             text-decoration: none;
             transition: all 0.3s ease;
@@ -307,169 +203,176 @@
             display: inline-block;
         }
 
-        .btn-primary {
+        .btn--primary {
             background: white;
-            color: var(--primary);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            color: var(--primary-color);
+            box-shadow: 0 10px 30px var(--shadow);
         }
 
-        .btn-primary:hover {
+        .btn--primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 15px 40px var(--shadow);
         }
 
-        .btn-primary.loading {
-            background: var(--primary);
-            color: white;
-            cursor: not-allowed;
-        }
-
-        .btn-primary.success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-primary.error {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-outline {
+        .btn--outline {
             background: transparent;
             color: white;
             border: 2px solid white;
         }
 
-        .btn-outline:hover {
+        .btn--outline:hover {
             background: white;
-            color: var(--primary);
+            color: var(--primary-color);
             transform: translateY(-3px);
         }
 
-        .scroll-indicator {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: bounce 2s infinite;
+        /* Top Controls */
+        .top-controls {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 10;
+            align-items: center;
         }
 
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-            40% { transform: translateX(-50%) translateY(-10px); }
-            60% { transform: translateX(-50%) translateY(-5px); }
+        .theme-toggle,
+        .language-toggle {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 999px;
+            padding: 0.7rem 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: var(--text-color);
+            min-width: 3.25rem;
+            min-height: 3.25rem;
         }
 
-        .scroll-indicator svg {
-            width: 30px;
-            height: 30px;
-            fill: white;
-            opacity: 0.7;
+        .theme-toggle:hover,
+        .language-toggle:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .language-toggle {
+            font-size: 0.9rem;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .language-option {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .language-toggle[data-lang='en'] .language-option--en,
+        .language-toggle[data-lang='ja'] .language-option--ja {
+            color: var(--text-color);
+            font-weight: 700;
+        }
+
+        .language-divider {
+            color: var(--text-muted);
         }
 
         /* Sections */
         section {
-            padding: 100px 0;
-            position: relative;
-            background: #000000;
-            color: #ffffff;
+            padding: 5rem 0;
+            background-color: var(--section-bg);
+            color: var(--text-color);
         }
 
-        .day-mode section {
-            background: #ffffff;
-            color: #000000;
-        }
-
-        .section-header {
+        .section__header {
             text-align: center;
-            margin-bottom: 60px;
+            margin-bottom: 3.75rem;
             opacity: 0;
             transform: translateY(30px);
             transition: all 0.8s ease;
         }
 
-        .section-header.visible {
+        .section__header.visible {
             opacity: 1;
             transform: translateY(0);
         }
 
-        .section-badge {
+        .section__badge {
             display: inline-block;
-            padding: 8px 20px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            padding: 0.5rem 1.25rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
             border-radius: 50px;
-            font-size: 0.9em;
+            font-size: 0.9rem;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 0.9375rem;
         }
 
-        .section-header h2 {
-            font-size: 3em;
-            color: #ffffff;
-            margin-bottom: 15px;
+        .section__title {
+            margin-bottom: 0.9375rem;
         }
 
-        .day-mode .section-header h2 {
-            color: #000000;
-        }
-
-        .section-header p {
-            font-size: 1.2em;
-            color: #cccccc;
+        .section__description {
+            font-size: 1.2rem;
+            color: var(--text-muted);
             max-width: 700px;
             margin: 0 auto;
         }
 
-        .day-mode .section-header p {
-            color: #333333;
-        }
-
         /* About Section */
-        .about-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 60px;
-            align-items: center;
+        .about {
+            padding-top: 2rem;
         }
 
-        .about-text {
+        .about__content {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 3.75rem;
+            align-items: center;
+            justify-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .about__text {
+            width: 100%;
+            max-width: 600px;
             opacity: 0;
             transform: translateX(-30px);
             transition: all 0.8s ease;
+            justify-self: start;
         }
 
-        .about-text.visible {
+        .about__text.visible {
             opacity: 1;
             transform: translateX(0);
         }
 
-        .about-text p {
-            font-size: 1.1em;
-            line-height: 1.8;
-            color: #cccccc;
-            margin-bottom: 20px;
-        }
-
-        .day-mode .about-text p {
-            color: #333333;
-        }
-
-        .about-image {
+        .about__image {
             position: relative;
             opacity: 0;
             transform: translateX(30px);
             transition: all 0.8s ease;
+            justify-self: center;
+            width: 100%;
+            max-width: 460px;
         }
 
-        .about-image.visible {
+        .about__image.visible {
             opacity: 1;
             transform: translateX(0);
         }
 
         .profile-card {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            padding: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 2.5rem;
             border-radius: 30px;
             box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3);
             text-align: center;
@@ -497,7 +400,7 @@
         .profile-img-wrapper {
             width: 200px;
             height: 200px;
-            margin: 0 auto 20px;
+            margin: 0 auto 1.25rem;
             border-radius: 50%;
             background: white;
             padding: 5px;
@@ -513,16 +416,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 4em;
+            font-size: 4rem;
             font-weight: bold;
             color: white;
         }
 
-        .contact-info-card {
+        .contact-info {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 0.9375rem;
+            margin-top: 1.25rem;
             position: relative;
             z-index: 1;
         }
@@ -530,14 +433,14 @@
         .contact-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.625rem;
             justify-content: center;
         }
 
-        /* Experience Timeline */
+        /* Experience Section */
         .timeline {
             position: relative;
-            padding: 40px 0;
+            padding: 2.5rem 0;
         }
 
         .timeline::before {
@@ -547,13 +450,13 @@
             top: 0;
             bottom: 0;
             width: 3px;
-            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
             transform: translateX(-50%);
         }
 
         .timeline-item {
             display: flex;
-            margin-bottom: 60px;
+            margin-bottom: 3.75rem;
             position: relative;
             opacity: 0;
             transform: translateY(30px);
@@ -575,13 +478,13 @@
 
         .timeline-content {
             flex: 1;
-            padding: 0 40px;
+            padding: 0 2.5rem;
         }
 
         .timeline-dot {
-            width: 20px;
-            height: 20px;
-            background: var(--primary);
+            width: 1.25rem;
+            height: 1.25rem;
+            background: var(--primary-color);
             border-radius: 50%;
             position: absolute;
             left: 50%;
@@ -591,17 +494,12 @@
         }
 
         .experience-card {
-            background: #333333;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            background: var(--card-bg);
+            padding: 1.875rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 40px var(--shadow);
             transition: all 0.3s ease;
-            color: #ffffff;
-        }
-
-        .day-mode .experience-card {
-            background: #f8f9fa;
-            color: #000000;
+            color: var(--text-color);
         }
 
         .experience-card:hover {
@@ -610,36 +508,28 @@
         }
 
         .job-title {
-            font-size: 1.5em;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 10px;
+            color: var(--primary-color);
+            margin-bottom: 0.625rem;
         }
 
         .company {
-            font-size: 1.1em;
-            color: #cccccc;
-            margin-bottom: 8px;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
             font-weight: 600;
         }
 
-        .day-mode .company {
-            color: #666666;
-        }
-
         .date {
-            color: #999999;
-            font-size: 0.95em;
-            margin-bottom: 15px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 0.9375rem;
             display: inline-block;
             padding: 5px 15px;
-            background: #555555;
+            background: var(--card-bg);
             border-radius: 20px;
-        }
-
-        .day-mode .date {
-            color: #666666;
-            background: #e9ecef;
+            border: 1px solid var(--border-color);
         }
 
         .job-description {
@@ -650,50 +540,36 @@
         .job-description li {
             padding: 8px 0 8px 25px;
             position: relative;
-            color: #cccccc;
+            color: var(--text-muted);
             line-height: 1.6;
-        }
-
-        .day-mode .job-description li {
-            color: #333333;
         }
 
         .job-description li::before {
             content: '→';
             position: absolute;
             left: 0;
-            color: var(--primary);
+            color: var(--primary-color);
             font-weight: bold;
         }
 
-        .job-description a {
-            color: inherit;
-            text-decoration: underline;
-            transition: opacity 0.3s ease;
-        }
-
-        .job-description a:hover {
-            opacity: 0.7;
-        }
-
-        /* Skills Grid */
+        /* Skills Section */
         .skills-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
+            gap: 1.875rem;
         }
 
         .skill-card {
-            background: #333333;
-            padding: 35px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            background: var(--card-bg);
+            padding: 2.1875rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 40px var(--shadow);
             transition: all 0.4s ease;
             opacity: 0;
             transform: translateY(30px);
             position: relative;
             overflow: hidden;
-            color: #ffffff;
+            color: var(--text-color);
         }
 
         .skill-card::before {
@@ -703,7 +579,7 @@
             left: 0;
             width: 100%;
             height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
             transform: scaleX(0);
             transition: transform 0.4s ease;
         }
@@ -722,152 +598,149 @@
             box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15);
         }
 
-        .day-mode .skill-card {
-            background: #f8f9fa;
-            color: #000000;
-        }
-
         .skill-icon {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8em;
-            margin-bottom: 20px;
+            font-size: 1.8rem;
+            margin-bottom: 1.25rem;
             color: white;
         }
 
         .skill-card h3 {
-            font-size: 1.4em;
-            color: #ffffff;
-            margin-bottom: 20px;
-        }
-
-        .day-mode .skill-card h3 {
-            color: var(--dark);
+            font-size: 1.4rem;
+            margin-bottom: 1.25rem;
         }
 
         .skill-tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 0.625rem;
         }
 
         .skill-tag {
             padding: 8px 16px;
-            background: #555555;
-            color: #ffffff;
+            background: var(--card-bg);
+            color: var(--text-color);
             border-radius: 20px;
-            font-size: 0.9em;
+            font-size: 0.9rem;
             transition: all 0.3s ease;
-            border: 2px solid transparent;
+            border: 2px solid var(--border-color);
             display: inline-block;
         }
 
         .skill-tag:hover {
-            background: var(--primary);
+            background: var(--primary-color);
             color: white;
-            border-color: var(--primary);
+            border-color: var(--primary-color);
             transform: translateY(-2px);
         }
 
-        .day-mode .skill-tag {
-            background: #e9ecef;
-            color: #333333;
-        }
-
-        .day-mode .skill-tag:hover {
-            background: var(--primary);
-            color: white;
+        /* Education Section */
+        .education-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 1.875rem;
+            max-width: 700px;
+            margin: 0 auto;
         }
 
         /* CTA Section */
         .cta-section {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
             text-align: center;
-            padding: 80px 0;
         }
 
         .cta-section h2 {
-            font-size: 3em;
-            margin-bottom: 20px;
+            font-size: 3rem;
+            margin-bottom: 1.25rem;
             color: white;
         }
 
         .cta-section p {
-            font-size: 1.3em;
-            margin-bottom: 40px;
+            font-size: 1.3rem;
+            margin-bottom: 2.5rem;
             opacity: 0.9;
+        }
+
+        /* Contact Form */
+        #contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        #contact-form input,
+        #contact-form textarea {
+            padding: 0.9375rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            background: var(--card-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        #contact-form input:focus,
+        #contact-form textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        #contact-form textarea {
+            min-height: 150px;
+            resize: vertical;
         }
 
         /* Footer */
         footer {
-            background: #000000;
-            color: #ffffff;
-            padding: 40px 0;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 2.5rem 0;
             text-align: center;
-        }
-
-        .day-mode footer {
-            background: #ffffff;
-            color: #000000;
         }
 
         footer p {
             opacity: 0.7;
         }
 
-        /* Scroll Animation */
-        .fade-in {
+        /* Back to Top */
+        .back-to-top {
+            position: fixed;
+            bottom: 1.25rem;
+            right: 1.25rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 50%;
+            width: 3.125rem;
+            height: 3.125rem;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: var(--text-color);
             opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease;
+            visibility: hidden;
         }
 
-        .fade-in.visible {
+        .back-to-top.visible {
             opacity: 1;
-            transform: translateY(0);
+            visibility: visible;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5em;
-            }
-
-            .hero .subtitle {
-                font-size: 1.2em;
-            }
-
-            .about-content {
-                grid-template-columns: 1fr;
-                gap: 40px;
-            }
-
-            .timeline::before {
-                left: 20px;
-            }
-
-            .timeline-item {
-                flex-direction: column !important;
-            }
-
-            .timeline-item .timeline-content {
-                text-align: left !important;
-                padding: 0 0 0 50px;
-            }
-
-            .timeline-dot {
-                left: 20px;
-            }
-
-            .section-header h2 {
-                font-size: 2em;
-            }
+        .back-to-top:hover {
+            transform: scale(1.1);
         }
 
         /* Particles */
@@ -888,561 +761,762 @@
             animation: rise 15s infinite ease-in;
         }
 
-        .day-mode .particle {
+        .light-mode .particle {
             background: rgba(0, 0, 0, 0.3);
         }
 
         @keyframes rise {
-            0% {
-                bottom: -100px;
-                opacity: 0;
+            0% { bottom: -100px; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { bottom: 100%; opacity: 0; }
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 1.875rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero__buttons {
+                flex-direction: column;
+                align-items: center;
             }
-            10% {
-                opacity: 1;
+
+            .about {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
             }
-            90% {
-                opacity: 1;
+
+            .about__content {
+                grid-template-columns: 1fr;
+                justify-items: stretch;
             }
-            100% {
-                bottom: 100%;
-                opacity: 0;
+
+            .about__image {
+                max-width: 100%;
+            }
+
+            .timeline::before {
+                left: 1.25rem;
+            }
+
+            .timeline-item {
+                flex-direction: column !important;
+            }
+
+            .timeline-item .timeline-content {
+                text-align: left !important;
+                padding: 0 0 0 3.125rem;
+            }
+
+            .timeline-dot {
+                left: 1.25rem;
+            }
+
+            .section__title {
+                font-size: 2rem;
+            }
+
+            .skills-grid {
+                grid-template-columns: 1fr;
             }
         }
 
-        /* Theme Toggle */
-        .theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #ffffff;
-            backdrop-filter: blur(10px);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            color: #000000;
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
         }
 
-        .day-mode .theme-toggle {
-            background: #000000;
-            color: #ffffff;
+        /* Focus styles */
+        a:focus,
+        button:focus,
+        input:focus,
+        textarea:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
         }
 
-        .theme-toggle:hover {
-            transform: scale(1.1);
-        }
-
-        .sun-icon, .moon-icon {
-            width: 24px;
-            height: 24px;
-            transition: all 0.3s ease;
-        }
-
-        .sun-icon {
-            opacity: 1;
-        }
-
-        .day-mode .sun-icon {
-            opacity: 0;
-            transform: rotate(180deg);
-        }
-
-        .moon-icon {
-            opacity: 0;
-            transform: rotate(-180deg);
-        }
-
-        .day-mode .moon-icon {
-            opacity: 1;
-            transform: rotate(0deg);
-        }
-
-        /* Back to Top */
-        .back-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #ffffff;
-            backdrop-filter: blur(10px);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            color: #000000;
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        .back-to-top.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .day-mode .back-to-top {
-            background: #000000;
-            color: #ffffff;
-        }
-
-        .back-to-top:hover {
-            transform: scale(1.1);
-        }
-
-        .back-to-top svg {
-            width: 24px;
-            height: 24px;
-        }
-
-        /* Contact Form */
-        #contact-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        #contact-form input, #contact-form textarea {
-            padding: 15px;
-            border: 2px solid rgba(28, 29, 55, 0.3);
-            border-radius: 10px;
-            font-size: 1em;
-            background: rgba(255, 255, 255, 0.9);
-            color: var(--dark);
-            transition: all 0.3s ease;
-        }
-
-        #contact-form input:focus, #contact-form textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        .day-mode #contact-form input,
-        .day-mode #contact-form textarea {
-            background: rgba(255, 255, 255, 1);
-            border-color: rgba(0, 0, 0, 0.2);
-        }
-
-        .day-mode #contact-form input:focus,
-        .day-mode #contact-form textarea:focus {
-            border-color: var(--primary);
-        }
-
-        #contact-form textarea {
-            min-height: 150px;
-            resize: vertical;
+        /* Print styles */
+        @media print {
+            .theme-toggle,
+            .back-to-top,
+            .particles {
+                display: none !important;
+            }
         }
     </style>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="particles" id="particles"></div>
-        <div class="sun"></div>
-        <div class="landscape">
-            <div class="mountain back"></div>
-            <div class="mountain middle"></div>
-            <div class="mountain front"></div>
-            <div class="tree"></div>
-            <div class="tree-shadow"></div>
-            <div class="mountain-shadow"></div>
-        </div>
-        <button id="theme-toggle" class="theme-toggle">
-            <svg class="sun-icon" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clip-rule="evenodd"/>
-            </svg>
-            <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor">                
-                <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/>
-            </svg>
-        </button>
-        <div class="hero-content">
-            <div class="hero-badge">👋 Available for Opportunities</div>
-            <h1>Zeyar Win Thu</h1>
-            <p class="subtitle">Full-Stack Developer | Backend Specialist</p>
-            <div class="hero-buttons">
-                <a href="#experience" class="btn btn-primary">View My Work</a>
-                <a href="#contact" class="btn btn-outline">Get In Touch</a>
-            </div>
-        </div>
-        <div class="scroll-indicator">
-            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
-        </div>
-    </section>
+    <!-- Improved semantic structure with header, main, and footer -->
+    <header class="hero" role="banner">
+        <!-- Particles for visual effect -->
+        <div class="particles" id="particles" aria-hidden="true"></div>
 
-    <!-- About Section -->
-    <section id="about">
-        <div class="container">
-            <div class="section-header fade-in">
-                <span class="section-badge">About Me</span>
-                <h2>Building Powerful Systems</h2>
-                <p>Passionate about creating scalable, efficient solutions</p>
-            </div>
-            <div class="about-content">
-                <div class="about-text fade-in">
-                    <p>I am a Full-Stack Developer with extensive experience in .NET development, API design, and cloud services. I specialize in building and maintaining robust backend systems using C#, ASP.NET Core, Entity Framework, and LINQ.</p>
-                    <p>With expertise in Azure, AWS, and DevOps tools, I focus on improving performance and stability. I leverage design patterns like Repository Pattern to write clean, maintainable code.</p>
-                    <p>I'm passionate about making high-quality software and solving complex problems. Currently seeking opportunities where I can utilize my skills and continue growing as a developer.</p>
-                </div>
-                <div class="about-image fade-in">
-                    <div class="profile-card">
-                        <div class="profile-img-wrapper">
-                            <div class="profile-img">ZW</div>
-                        </div>
-                        <h3 style="font-size: 1.5em; margin-bottom: 20px;">Contact Info</h3>
-                        <div class="contact-info-card">
-                            <div class="contact-item">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                                <span>Tokyo, Japan</span>
+        <!-- Top control buttons -->
+        <div class="top-controls">
+            <button id="theme-toggle" class="theme-toggle" aria-label="Toggle between dark and light mode">
+                <svg class="sun-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clip-rule="evenodd"/>
+                </svg>
+                <svg class="moon-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/>
+                </svg>
+            </button>
+            <button id="language-toggle" class="language-toggle" data-lang="en" data-i18n-aria="language.toggle" aria-label="Toggle language between English and Japanese">
+                <span class="language-option language-option--en">EN</span>
+                <span class="language-divider">|</span>
+                <span class="language-option language-option--ja">日本語</span>
+            </button>
+        </div>
+
+        <div class="hero__content">
+            <div class="hero__badge" data-i18n="hero.badge">👋 Available for Opportunities</div>
+            <h1 class="hero__title">Zeyar Win Thu</h1>
+            <p class="hero__subtitle" data-i18n="hero.subtitle">Full-Stack Developer | Backend Specialist</p>
+            <nav class="hero__buttons" role="navigation" aria-label="Main navigation">
+                <a href="#experience" class="btn btn--primary" data-i18n="hero.ctaWork">View My Work</a>
+                <a href="#contact" class="btn btn--outline" data-i18n="hero.ctaContact">Get In Touch</a>
+            </nav>
+        </div>
+
+        <!-- Landscape elements for visual appeal -->
+        <div class="hero__landscape" aria-hidden="true">
+            <div class="mountain mountain--back"></div>
+            <div class="mountain mountain--middle"></div>
+            <div class="mountain mountain--front"></div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="scroll-indicator" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="30" height="30"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+        </div>
+    </header>
+
+    <main>
+        <!-- About Section -->
+        <section id="about" class="about">
+            <div class="container">
+                <header class="section__header fade-in">
+                    <span class="section__badge" data-i18n="about.badge">About Me</span>
+                    <h2 class="section__title" data-i18n="about.title">Building Powerful Systems</h2>
+                    <p class="section__description" data-i18n="about.description">Passionate about creating scalable, efficient solutions</p>
+                </header>
+                <div class="about__content">
+                    <div class="about__text fade-in">
+                        <p data-i18n="about.paragraph1">I am a Full-Stack Developer with extensive experience in .NET development, API design, and cloud services. I specialize in building and maintaining robust backend systems using C#, ASP.NET Core, Entity Framework, and LINQ.</p>
+                        <p data-i18n="about.paragraph2">With expertise in Azure, AWS, and DevOps tools, I focus on improving performance and stability. I leverage design patterns like Repository Pattern to write clean, maintainable code.</p>
+                        <p data-i18n="about.paragraph3">I'm passionate about making high-quality software and solving complex problems. Currently seeking opportunities where I can utilize my skills and continue growing as a developer.</p>
+                    </div>
+                    <div class="about__image fade-in">
+                        <div class="profile-card">
+                            <div class="profile-img-wrapper">
+                                <div class="profile-img" aria-label="Profile picture placeholder">ZW</div>
                             </div>
-                            <div class="contact-item">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-                                <span>070-9310-1776</span>
+                            <h3 data-i18n="about.contactTitle">Contact Info</h3>
+                            <div class="contact-info">
+                                <div class="contact-item">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                                    <span>Tokyo, Japan</span>
+                                </div>
+                                <div class="contact-item">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                                    <span>070-9310-1776</span>
+                                </div>
+                                <div class="contact-item">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                                    <span>official.zeyarwinthu@gmail.com</span>
+                                </div>
                             </div>
-                            <div class="contact-item">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-                                <span>official.zeyarwinthu@gmail.com</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Experience Section -->
+        <section id="experience">
+            <div class="container">
+                <header class="section__header fade-in">
+                    <span class="section__badge" data-i18n="experience.badge">Experience</span>
+                    <h2 class="section__title" data-i18n="experience.title">Professional Journey</h2>
+                    <p class="section__description" data-i18n="experience.description">Over 6+ years of hands-on development experience</p>
+                </header>
+                <div class="timeline">
+                    <article class="timeline-item">
+                        <div class="timeline-dot" aria-hidden="true"></div>
+                        <div class="timeline-content">
+                            <div class="experience-card">
+                                <h3 class="job-title" data-i18n="experience.job1.title">Senior Backend Developer</h3>
+                                <div class="company" data-i18n="experience.job1.company">REZERV Co., Ltd - Singapore (Remote)</div>
+                                <time class="date" datetime="2022-10" data-i18n="experience.job1.date">Oct 2022 – Present</time>
+                                <ul class="job-description">
+                                    <li data-i18n-html="experience.job1.li1">Developed and maintained backend services for <a href="https://rezerv.co" target="_blank" rel="noopener noreferrer">rezerv</a> using .NET 6</li>
+                                    <li data-i18n="experience.job1.li2">Implemented Hangfire for background job processing and Log4Net for logging</li>
+                                    <li data-i18n="experience.job1.li3">Used Redlock for distributed locking mechanisms to ensure data consistency</li>
+                                    <li data-i18n="experience.job1.li4">Applied Automapper for efficient object mapping and transformation</li>
+                                    <li data-i18n="experience.job1.li5">Monitored performance and logs via AWS CloudWatch</li>
+                                </ul>
                             </div>
                         </div>
-                    </div>
+                    </article>
+
+                    <article class="timeline-item">
+                        <div class="timeline-dot" aria-hidden="true"></div>
+                        <div class="timeline-content">
+                            <div class="experience-card">
+                                <h3 class="job-title" data-i18n="experience.job2.title">Senior .NET Developer</h3>
+                                <div class="company" data-i18n="experience.job2.company">UNIFINE Co., Ltd - Myanmar</div>
+                                <time class="date" datetime="2022-04" data-i18n="experience.job2.date">Apr 2022 – Sept 2022</time>
+                                <ul class="job-description">
+                                    <li data-i18n="experience.job2.li1">Managed web projects using Angular and API development using .NET Core</li>
+                                    <li data-i18n="experience.job2.li2">Maintained Windows Server 2019 infrastructure</li>
+                                    <li data-i18n="experience.job2.li3">Integrated third-party APIs including OneSignal and Google services</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="timeline-item">
+                        <div class="timeline-dot" aria-hidden="true"></div>
+                        <div class="timeline-content">
+                            <div class="experience-card">
+                                <h3 class="job-title" data-i18n="experience.job3.title">Assistant Lead</h3>
+                                <div class="company" data-i18n="experience.job3.company">THETYS Co., Ltd - Myanmar (Thailand base)</div>
+                                <time class="date" datetime="2020-03" data-i18n="experience.job3.date">Mar 2020 – Apr 2022</time>
+                                <ul class="job-description">
+                                    <li data-i18n="experience.job3.li1">Led team of up to 5 members through the full Software Development Lifecycle</li>
+                                    <li data-i18n="experience.job3.li2">Analyzed and assigned tasks to team members</li>
+                                    <li data-i18n="experience.job3.li3">Designed and implemented database architecture</li>
+                                    <li data-i18n="experience.job3.li4">Developed mobile applications using Xamarin and Repository pattern REST APIs</li>
+                                    <li data-i18n="experience.job3.li5">Managed App Services and Databases through Microsoft Azure Portal</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="timeline-item">
+                        <div class="timeline-dot" aria-hidden="true"></div>
+                        <div class="timeline-content">
+                            <div class="experience-card">
+                                <h3 class="job-title" data-i18n="experience.job4.title">Web Developer</h3>
+                                <div class="company" data-i18n="experience.job4.company">THETYS Co., Ltd - Myanmar (Thailand base)</div>
+                                <time class="date" datetime="2019-02" data-i18n="experience.job4.date">Feb 2019 – Feb 2020</time>
+                                <ul class="job-description">
+                                    <li data-i18n="experience.job4.li1">Developed websites using HTML5, CSS3, JavaScript, Vue.js, ASP.NET, and .NET MVC5</li>
+                                    <li data-i18n="experience.job4.li2">Built Web APIs using .NET Core, Entity Framework Core, and LINQ</li>
+                                    <li data-i18n="experience.job4.li3">Participated in 5 software development projects</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Experience Section -->
-    <section id="experience">
-        <div class="container">
-            <div class="section-header fade-in">
-                <span class="section-badge">Experience</span>
-                <h2>Professional Journey</h2>
-                <p>Over 6+ years of hands-on development experience</p>
-            </div>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <div class="experience-card">
-                            <div class="job-title">Senior Backend Developer</div>
-                            <div class="company">REZERV Co., Ltd - Singapore (Remote)</div>
-                            <span class="date">Oct 2022 – Present</span>
-                            <ul class="job-description">
-                                <li>Developed and maintained backend services for <a href="https://rezerv.co">rezerv</a> using .NET 6</li>
-                                <li>Implemented Hangfire for background job processing and Log4Net for logging</li>
-                                <li>Used Redlock for distributed locking mechanisms to ensure data consistency</li>
-                                <li>Applied Automapper for efficient object mapping and transformation</li>
-                                <li>Monitored performance and logs via AWS CloudWatch</li>
-                            </ul>
+        <!-- Skills Section -->
+        <section id="skills">
+            <div class="container">
+                <header class="section__header fade-in">
+                    <span class="section__badge">Skills & Expertise</span>
+                    <h2 class="section__title">Technical Arsenal</h2>
+                    <p class="section__description">Technologies I work with daily</p>
+                </header>
+                <div class="skills-grid">
+                    <div class="skill-card">
+                        <div class="skill-icon" aria-hidden="true">💻</div>
+                        <h3>Backend Development</h3>
+                        <div class="skill-tags">
+                            <span class="skill-tag">C#</span>
+                            <span class="skill-tag">ASP.NET Core</span>
+                            <span class="skill-tag">.NET Framework</span>
+                            <span class="skill-tag">Entity Framework</span>
+                            <span class="skill-tag">LINQ</span>
+                        </div>
+                    </div>
+
+                    <div class="skill-card">
+                        <div class="skill-icon" aria-hidden="true">☁️</div>
+                        <h3>Cloud & DevOps</h3>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Microsoft Azure</span>
+                            <span class="skill-tag">AWS</span>
+                            <span class="skill-tag">Windows Server</span>
+                        </div>
+                    </div>
+
+                    <div class="skill-card">
+                        <div class="skill-icon" aria-hidden="true">🛠️</div>
+                        <h3>Tools & Libraries</h3>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Hangfire</span>
+                            <span class="skill-tag">Log4Net</span>
+                            <span class="skill-tag">Redlock</span>
+                            <span class="skill-tag">Automapper</span>
+                        </div>
+                    </div>
+
+                    <div class="skill-card">
+                        <div class="skill-icon" aria-hidden="true">🎨</div>
+                        <h3>Frontend Technologies</h3>
+                        <div class="skill-tags">
+                            <span class="skill-tag">HTML5</span>
+                            <span class="skill-tag">CSS3</span>
+                            <span class="skill-tag">JavaScript</span>
+                            <span class="skill-tag">Vue.js</span>
+                            <span class="skill-tag">Angular</span>
+                        </div>
+                    </div>
+
+                    <div class="skill-card">
+                        <div class="skill-icon" aria-hidden="true">📱</div>
+                        <h3>Mobile Development</h3>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Xamarin</span>
+                        </div>
+                    </div>
+
+                    <div class="skill-card">
+                        <div class="skill-icon" aria-hidden="true">🔧</div>
+                        <h3>Design Patterns</h3>
+                        <div class="skill-tags">
+                            <span class="skill-tag">Repository Pattern</span>
+                            <span class="skill-tag">REST APIs</span>
                         </div>
                     </div>
                 </div>
+            </div>
+        </section>
 
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <div class="experience-card">
-                            <div class="job-title">Senior .NET Developer</div>
-                            <div class="company">UNIFINE Co., Ltd - Myanmar</div>
-                            <span class="date">Apr 2022 – Sept 2022</span>
-                            <ul class="job-description">
-                                <li>Managed web projects using Angular and API development using .NET Core</li>
-                                <li>Maintained Windows Server 2019 infrastructure</li>
-                                <li>Integrated third-party APIs including OneSignal and Google services</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <div class="experience-card">
-                            <div class="job-title">Assistant Lead</div>
-                            <div class="company">THETYS Co., Ltd - Myanmar (Thailand base)</div>
-                            <span class="date">Mar 2020 – Apr 2022</span>
-                            <ul class="job-description">
-                                <li>Led team of up to 5 members through the full Software Development Lifecycle</li>
-                                <li>Analyzed and assigned tasks to team members</li>
-                                <li>Designed and implemented database architecture</li>
-                                <li>Developed mobile applications using Xamarin and Repository pattern REST APIs</li>
-                                <li>Managed App Services and Databases through Microsoft Azure Portal</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="timeline-content">
-                        <div class="experience-card">
-                            <div class="job-title">Web Developer</div>
-                            <div class="company">THETYS Co., Ltd - Myanmar (Thailand base)</div>
-                            <span class="date">Feb 2019 – Feb 2020</span>
-                            <ul class="job-description">
-                                <li>Developed websites using HTML5, CSS3, JavaScript, Vue.js, ASP.NET, and .NET MVC5</li>
-                                <li>Built Web APIs using .NET Core, Entity Framework Core, and LINQ</li>
-                                <li>Participated in 5 software development projects</li>
-                            </ul>
-                        </div>
-                    </div>
+        <!-- Education Section -->
+        <section id="education">
+            <div class="container">
+                <header class="section__header fade-in">
+                    <span class="section__badge" data-i18n="education.badge">Education</span>
+                    <h2 class="section__title" data-i18n="education.title">Academic Background</h2>
+                </header>
+                <div class="education-cards">
+                    <article class="experience-card fade-in">
+                        <h3 class="job-title" data-i18n="education.degree1">Bachelor of Computer Science (B.C.Sc)</h3>
+                        <div class="company" data-i18n="education.school1">University of Computer Studies - Monywa</div>
+                        <time class="date" datetime="2019-02" data-i18n="education.graduation1">Graduated: February 2019</time>
+                    </article>
+                    <article class="experience-card fade-in">
+                        <h3 class="job-title" data-i18n="education.certificate1">TOEIC Listening & Reading Test</h3>
+                        <div class="company" data-i18n="education.certificateDetail1">English Proficiency Certificate - Score: 725</div>
+                        <time class="date" data-i18n="education.certificateStatus">Certified</time>
+                    </article>
+                    <article class="experience-card fade-in">
+                        <h3 class="job-title" data-i18n="education.certificate2">JLPT N4 Certificate</h3>
+                        <div class="company" data-i18n="education.certificateDetail2">Japanese Language Proficiency Test</div>
+                        <time class="date" data-i18n="education.certificateStatus">Certified</time>
+                    </article>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Skills Section -->
-    <section id="skills">
+        <!-- Contact Section -->
+        <section id="contact" class="cta-section">
+            <div class="container">
+                <h2 data-i18n="contact.heading">Let's Build Something Amazing</h2>
+                <p data-i18n="contact.description">Ready to collaborate? Let's discuss your next project</p>
+                <form id="contact-form" action="#" method="post" role="form">
+                    <label for="name" class="sr-only" data-i18n="contact.labelName">Your Name</label>
+                    <input type="text" id="name" name="name" placeholder="Your Name" data-i18n-placeholder="contact.placeholderName" required aria-required="true">
+                    <label for="email" class="sr-only" data-i18n="contact.labelEmail">Your Email</label>
+                    <input type="email" id="email" name="email" placeholder="Your Email" data-i18n-placeholder="contact.placeholderEmail" required aria-required="true">
+                    <label for="subject" class="sr-only" data-i18n="contact.labelSubject">Subject</label>
+                    <input type="text" id="subject" name="subject" placeholder="Subject" data-i18n-placeholder="contact.placeholderSubject" required aria-required="true">
+                    <label for="message" class="sr-only" data-i18n="contact.labelMessage">Your Message</label>
+                    <textarea id="message" name="message" placeholder="Your Message" data-i18n-placeholder="contact.placeholderMessage" required aria-required="true"></textarea>
+                    <button type="submit" class="btn btn--primary" data-i18n="contact.submit">Send Message</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer role="contentinfo">
         <div class="container">
-            <div class="section-header fade-in">
-                <span class="section-badge">Skills & Expertise</span>
-                <h2>Technical Arsenal</h2>
-                <p>Technologies I work with daily</p>
-            </div>
-            <div class="skills-grid">
-                <div class="skill-card">
-                    <div class="skill-icon">💻</div>
-                    <h3>Backend Development</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">C#</span>
-                        <span class="skill-tag">ASP.NET Core</span>
-                        <span class="skill-tag">.NET Framework</span>
-                        <span class="skill-tag">Entity Framework</span>
-                        <span class="skill-tag">LINQ</span>
-                    </div>
-                </div>
-
-                <div class="skill-card">
-                    <div class="skill-icon">☁️</div>
-                    <h3>Cloud & DevOps</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">Microsoft Azure</span>
-                        <span class="skill-tag">AWS</span>
-                        <span class="skill-tag">Windows Server</span>
-                    </div>
-                </div>
-
-                <div class="skill-card">
-                    <div class="skill-icon">🛠️</div>
-                    <h3>Tools & Libraries</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">Hangfire</span>
-                        <span class="skill-tag">Log4Net</span>
-                        <span class="skill-tag">Redlock</span>
-                        <span class="skill-tag">Automapper</span>
-                    </div>
-                </div>
-
-                <div class="skill-card">
-                    <div class="skill-icon">🎨</div>
-                    <h3>Frontend Technologies</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">HTML5</span>
-                        <span class="skill-tag">CSS3</span>
-                        <span class="skill-tag">JavaScript</span>
-                        <span class="skill-tag">Vue.js</span>
-                        <span class="skill-tag">Angular</span>
-                    </div>
-                </div>
-
-                <div class="skill-card">
-                    <div class="skill-icon">📱</div>
-                    <h3>Mobile Development</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">Xamarin</span>
-                    </div>
-                </div>
-
-                <div class="skill-card">
-                    <div class="skill-icon">🔧</div>
-                    <h3>Design Patterns</h3>
-                    <div class="skill-tags">
-                        <span class="skill-tag">Repository Pattern</span>
-                        <span class="skill-tag">REST APIs</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Education Section -->
-    <section id="education">
-        <div class="container">
-            <div class="section-header fade-in">
-                <span class="section-badge">Education</span>
-                <h2>Academic Background</h2>
-            </div>
-            <div class="experience-card fade-in" style="max-width: 700px; margin: 0 auto;">
-                <div class="job-title">Bachelor of Computer Science (B.C.Sc)</div>
-                <div class="company">University of Computer Studies - Monywa</div>
-                <span class="date">Graduated: February 2019</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section id="contact" class="cta-section">
-        <div class="container">
-            <h2>Let's Build Something Amazing</h2>
-            <p>Ready to collaborate? Let's discuss your next project</p>
-            <form id="contact-form">
-                <input type="text" id="name" name="name" placeholder="Your Name" required>
-                <input type="email" id="email" name="email" placeholder="Your Email" required>
-                <input type="text" id="subject" name="subject" placeholder="Subject" required>
-                <textarea id="message" name="message" placeholder="Your Message" required></textarea>
-                <button type="submit" class="btn btn-primary">Send Message</button>
-            </form>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 Zeyar Win Thu. All rights reserved.</p>
+            <p data-i18n="footer.text">&copy; 2024 Zeyar Win Thu. All rights reserved.</p>
         </div>
     </footer>
 
     <!-- Back to Top Button -->
-    <button id="back-to-top" class="back-to-top">
-        <svg viewBox="0 0 24 24" fill="currentColor">
+    <button id="back-to-top" class="back-to-top" aria-label="Back to top">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
         </svg>
     </button>
 
+    <!-- EmailJS Library -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
     <script>
-        // Particles Animation
-        function createParticles() {
-            const particles = document.getElementById('particles');
-            for (let i = 0; i < 30; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.width = Math.random() * 5 + 2 + 'px';
-                particle.style.height = particle.style.width;
-                particle.style.animationDelay = Math.random() * 15 + 's';
-                particle.style.animationDuration = Math.random() * 10 + 10 + 's';
-                particles.appendChild(particle);
+        // Improved JavaScript with better practices
+        document.addEventListener('DOMContentLoaded', function() {
+            // Particles Animation
+            function createParticles() {
+                const particles = document.getElementById('particles');
+                if (!particles) return;
+                for (let i = 0; i < 30; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.width = Math.random() * 5 + 2 + 'px';
+                    particle.style.height = particle.style.width;
+                    particle.style.animationDelay = Math.random() * 15 + 's';
+                    particle.style.animationDuration = Math.random() * 10 + 10 + 's';
+                    particles.appendChild(particle);
+                }
             }
-        }
-        createParticles();
+            createParticles();
 
-        // Smooth Scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Scroll Animation Observer
-        const observerOptions = {
-            threshold: 0.15,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
-
-        // Observe all elements with fade-in class
-        document.querySelectorAll('.fade-in, .section-header, .about-text, .about-image, .timeline-item, .skill-card').forEach(el => {
-            observer.observe(el);
-        });
-
-        // Add stagger delay to skill cards
-        document.querySelectorAll('.skill-card').forEach((card, index) => {
-            card.style.transitionDelay = `${index * 0.1}s`;
-        });
-
-        // Add stagger delay to timeline items
-        document.querySelectorAll('.timeline-item').forEach((item, index) => {
-            item.style.transitionDelay = `${index * 0.2}s`;
-        });
-
-        // EmailJS Configuration
-        (function() {
-            emailjs.init("jRtZHlX_hMwCg_uBz"); // Replace with your EmailJS public key
-        })();
-        
-        document.getElementById('contact-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            
-            const btn = document.querySelector('#contact-form button');
-            btn.disabled = true;
-            btn.textContent = 'Sending...';
-            btn.classList.add('loading');
-            
-            const templateParams = {
-                from_name: document.getElementById('name').value,
-                from_email: document.getElementById('email').value,
-                subject: document.getElementById('subject').value,
-                message: document.getElementById('message').value
-            };
-            
-            emailjs.send('service_k5b5xfa', 'template_klf7mnz', templateParams)
-                .then(function(response) {
-                    btn.textContent = '✓ Sent!';
-                    btn.classList.remove('loading');
-                    btn.classList.add('success');
-                    document.getElementById('contact-form').reset();
-                    setTimeout(() => {
-                        btn.textContent = 'Send Message';
-                        btn.disabled = false;
-                        btn.classList.remove('success');
-                    }, 3000);
-                }, function(error) {
-                    btn.textContent = 'Failed. Try Again';
-                    btn.classList.remove('loading');
-                    btn.classList.add('error');
-                    btn.disabled = false;
-                    setTimeout(() => {
-                        btn.textContent = 'Send Message';
-                        btn.classList.remove('error');
-                    }, 3000);
+            // Smooth Scrolling with improved accessibility
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                        // Focus management for accessibility
+                        target.focus({ preventScroll: true });
+                    }
                 });
-        });
-
-        // Theme Toggle
-        document.getElementById('theme-toggle').addEventListener('click', function() {
-            document.body.classList.toggle('day-mode');
-        });
-
-        // Back to Top
-        const backToTopBtn = document.getElementById('back-to-top');
-        window.addEventListener('scroll', function() {
-            if (window.pageYOffset > 300) {
-                backToTopBtn.classList.add('visible');
-            } else {
-                backToTopBtn.classList.remove('visible');
-            }
-        });
-
-        backToTopBtn.addEventListener('click', function() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
             });
+
+            // Intersection Observer for animations
+            const observerOptions = {
+                threshold: 0.15,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe elements for fade-in animations
+            document.querySelectorAll('.fade-in, .section__header, .about__text, .about__image, .timeline-item, .skill-card').forEach(el => {
+                observer.observe(el);
+            });
+
+            // Stagger animations for skill cards
+            document.querySelectorAll('.skill-card').forEach((card, index) => {
+                card.style.transitionDelay = `${index * 0.1}s`;
+            });
+
+            // Stagger animations for timeline items
+            document.querySelectorAll('.timeline-item').forEach((item, index) => {
+                item.style.transitionDelay = `${index * 0.2}s`;
+            });
+
+            // EmailJS Configuration with error handling
+            (function() {
+                if (typeof emailjs !== 'undefined') {
+                    emailjs.init("jRtZHlX_hMwCg_uBz"); // Replace with your EmailJS public key
+                }
+            })();
+
+            // Contact Form Handler with improved UX
+            const contactForm = document.getElementById('contact-form');
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const btn = contactForm.querySelector('button');
+                    const originalText = btn.textContent;
+                    btn.disabled = true;
+                    btn.textContent = 'Sending...';
+                    btn.classList.add('loading');
+
+                    const templateParams = {
+                        from_name: document.getElementById('name').value,
+                        from_email: document.getElementById('email').value,
+                        subject: document.getElementById('subject').value,
+                        message: document.getElementById('message').value
+                    };
+
+                    if (typeof emailjs !== 'undefined') {
+                        emailjs.send('service_k5b5xfa', 'template_klf7mnz', templateParams)
+                            .then(function(response) {
+                                btn.textContent = '✓ Sent!';
+                                btn.classList.remove('loading');
+                                btn.classList.add('success');
+                                contactForm.reset();
+                                setTimeout(() => {
+                                    btn.textContent = originalText;
+                                    btn.disabled = false;
+                                    btn.classList.remove('success');
+                                }, 3000);
+                            }, function(error) {
+                                console.error('EmailJS error:', error);
+                                btn.textContent = 'Failed. Try Again';
+                                btn.classList.remove('loading');
+                                btn.classList.add('error');
+                                btn.disabled = false;
+                                setTimeout(() => {
+                                    btn.textContent = originalText;
+                                    btn.classList.remove('error');
+                                }, 3000);
+                            });
+                    } else {
+                        // Fallback if EmailJS fails to load
+                        alert('Email service is currently unavailable. Please try again later.');
+                        btn.textContent = originalText;
+                        btn.disabled = false;
+                    }
+                });
+            }
+
+            // Theme Toggle with localStorage persistence
+            const themeToggle = document.getElementById('theme-toggle');
+            const languageToggle = document.getElementById('language-toggle');
+            const body = document.body;
+
+            const translations = {
+                en: {
+                    'hero.badge': '👋 Available for Opportunities',
+                    'hero.subtitle': 'Full-Stack Developer | Backend Specialist',
+                    'hero.ctaWork': 'View My Work',
+                    'hero.ctaContact': 'Get In Touch',
+                    'about.badge': 'About Me',
+                    'about.title': 'Building Powerful Systems',
+                    'about.description': 'Passionate about creating scalable, efficient solutions',
+                    'about.paragraph1': 'I am a Full-Stack Developer with extensive experience in .NET development, API design, and cloud services. I specialize in building and maintaining robust backend systems using C#, ASP.NET Core, Entity Framework, and LINQ.',
+                    'about.paragraph2': 'With expertise in Azure, AWS, and DevOps tools, I focus on improving performance and stability. I leverage design patterns like Repository Pattern to write clean, maintainable code.',
+                    'about.paragraph3': 'I\'m passionate about making high-quality software and solving complex problems. Currently seeking opportunities where I can utilize my skills and continue growing as a developer.',
+                    'about.contactTitle': 'Contact Info',
+                    'experience.badge': 'Experience',
+                    'experience.title': 'Professional Journey',
+                    'experience.description': 'Over 6+ years of hands-on development experience',
+                    'experience.job1.title': 'Senior Backend Developer',
+                    'experience.job1.company': 'REZERV Co., Ltd - Singapore (Remote)',
+                    'experience.job1.date': 'Oct 2022 – Present',
+                    'experience.job1.li1': 'Developed and maintained backend services for <a href="https://rezerv.co" target="_blank" rel="noopener noreferrer">rezerv</a> using .NET 6',
+                    'experience.job1.li2': 'Implemented Hangfire for background job processing and Log4Net for logging',
+                    'experience.job1.li3': 'Used Redlock for distributed locking mechanisms to ensure data consistency',
+                    'experience.job1.li4': 'Applied Automapper for efficient object mapping and transformation',
+                    'experience.job1.li5': 'Monitored performance and logs via AWS CloudWatch',
+                    'experience.job2.title': 'Senior .NET Developer',
+                    'experience.job2.company': 'UNIFINE Co., Ltd - Myanmar',
+                    'experience.job2.date': 'Apr 2022 – Sept 2022',
+                    'experience.job2.li1': 'Managed web projects using Angular and API development using .NET Core',
+                    'experience.job2.li2': 'Maintained Windows Server 2019 infrastructure',
+                    'experience.job2.li3': 'Integrated third-party APIs including OneSignal and Google services',
+                    'experience.job3.title': 'Assistant Lead',
+                    'experience.job3.company': 'THETYS Co., Ltd - Myanmar (Thailand base)',
+                    'experience.job3.date': 'Mar 2020 – Apr 2022',
+                    'experience.job3.li1': 'Led team of up to 5 members through the full Software Development Lifecycle',
+                    'experience.job3.li2': 'Analyzed and assigned tasks to team members',
+                    'experience.job3.li3': 'Designed and implemented database architecture',
+                    'experience.job3.li4': 'Developed mobile applications using Xamarin and Repository pattern REST APIs',
+                    'experience.job3.li5': 'Managed App Services and Databases through Microsoft Azure Portal',
+                    'experience.job4.title': 'Web Developer',
+                    'experience.job4.company': 'THETYS Co., Ltd - Myanmar (Thailand base)',
+                    'experience.job4.date': 'Feb 2019 – Feb 2020',
+                    'experience.job4.li1': 'Developed websites using HTML5, CSS3, JavaScript, Vue.js, ASP.NET, and .NET MVC5',
+                    'experience.job4.li2': 'Built Web APIs using .NET Core, Entity Framework Core, and LINQ',
+                    'experience.job4.li3': 'Participated in 5 software development projects',
+                    'contact.heading': 'Let\'s Build Something Amazing',
+                    'contact.description': 'Ready to collaborate? Let\'s discuss your next project',
+                    'contact.labelName': 'Your Name',
+                    'contact.placeholderName': 'Your Name',
+                    'contact.labelEmail': 'Your Email',
+                    'contact.placeholderEmail': 'Your Email',
+                    'contact.labelSubject': 'Subject',
+                    'contact.placeholderSubject': 'Subject',
+                    'contact.labelMessage': 'Your Message',
+                    'contact.placeholderMessage': 'Your Message',
+                    'contact.submit': 'Send Message',
+                    'language.toggle': 'Toggle language between English and Japanese',
+                    'education.badge': 'Education',
+                    'education.title': 'Academic Background',
+                    'education.degree1': 'Bachelor of Computer Science (B.C.Sc)',
+                    'education.school1': 'University of Computer Studies - Monywa',
+                    'education.graduation1': 'Graduated: February 2019',
+                    'education.certificate1': 'TOEIC Listening & Reading Test',
+                    'education.certificateDetail1': 'English Proficiency Certificate - Score: 725',
+                    'education.certificate2': 'JLPT N4 Certificate',
+                    'education.certificateDetail2': 'Japanese Language Proficiency Test',
+                    'education.certificateStatus': 'Certified',
+                    'footer.text': '© 2024 Zeyar Win Thu. All rights reserved.'
+                },
+                ja: {
+                    'hero.badge': '👋 就業機会受付中',
+                    'hero.subtitle': 'フルスタック開発者 | バックエンドスペシャリスト',
+                    'hero.ctaWork': '実績を見る',
+                    'hero.ctaContact': 'お問い合わせ',
+                    'about.badge': '自己紹介',
+                    'about.title': '強力なシステムを構築',
+                    'about.description': 'スケーラブルで効率的なソリューション作りに情熱を注いでいます',
+                    'about.paragraph1': '私は .NET 開発、API 設計、クラウドサービスに豊富な経験を持つフルスタック開発者です。C#, ASP.NET Core, Entity Framework, LINQ を使用した堅牢なバックエンドシステムの構築と維持を専門としています。',
+                    'about.paragraph2': 'Azure、AWS、および DevOps ツールの専門知識を活かし、パフォーマンスと安定性の向上に注力しています。Repository Pattern などの設計パターンを活用し、クリーンで保守性の高いコードを書きます。',
+                    'about.paragraph3': '高品質なソフトウェアを作り、複雑な問題を解決することに情熱を持っています。現在、自分のスキルを活かしながら成長を続けられる機会を求めています。',
+                    'about.contactTitle': '連絡先',
+                    'experience.badge': '職務経歴',
+                    'experience.title': 'プロフェッショナルジャーニー',
+                    'experience.description': '6年以上の実務経験',
+                    'experience.job1.title': 'シニアバックエンド開発者',
+                    'experience.job1.company': 'REZERV Co., Ltd - シンガポール（リモート）',
+                    'experience.job1.date': '2022年10月 – 現在',
+                    'experience.job1.li1': 'REZERV 向けに .NET 6 を使用したバックエンドサービスの開発と保守を行いました。',
+                    'experience.job1.li2': 'Hangfire を導入してバッチ処理を実装し、Log4Net でログ管理を行いました。',
+                    'experience.job1.li3': 'Redlock を使用してデータ整合性を保証する分散ロックを実装しました。',
+                    'experience.job1.li4': 'Automapper を活用して効率的なオブジェクトマッピングと変換を実現しました。',
+                    'experience.job1.li5': 'AWS CloudWatch を使用してパフォーマンスとログを監視しました。',
+                    'experience.job2.title': 'シニア .NET 開発者',
+                    'experience.job2.company': 'UNIFINE Co., Ltd - ミャンマー',
+                    'experience.job2.date': '2022年4月 – 2022年9月',
+                    'experience.job2.li1': 'Angular と .NET Core を使用した Web プロジェクトと API 開発を管理しました。',
+                    'experience.job2.li2': 'Windows Server 2019 インフラストラクチャの運用を維持しました。',
+                    'experience.job2.li3': 'OneSignal や Google サービスなどのサードパーティAPIを統合しました。',
+                    'experience.job3.title': 'アシスタントリード',
+                    'experience.job3.company': 'THETYS Co., Ltd - ミャンマー（タイ拠点）',
+                    'experience.job3.date': '2020年3月 – 2022年4月',
+                    'experience.job3.li1': '最大5名のチームを率いてソフトウェア開発ライフサイクル全体を管理しました。',
+                    'experience.job3.li2': 'チームメンバーのタスクを分析し、割り当てました。',
+                    'experience.job3.li3': 'データベースアーキテクチャの設計と実装を行いました。',
+                    'experience.job3.li4': 'Xamarin と Repository パターン REST API を使用したモバイルアプリを開発しました。',
+                    'experience.job3.li5': 'Microsoft Azure ポータルを介して App Services とデータベースを管理しました。',
+                    'experience.job4.title': 'Web 開発者',
+                    'experience.job4.company': 'THETYS Co., Ltd - ミャンマー（タイ拠点）',
+                    'experience.job4.date': '2019年2月 – 2020年2月',
+                    'experience.job4.li1': 'HTML5、CSS3、JavaScript、Vue.js、ASP.NET、.NET MVC5 を使用してウェブサイトを開発しました。',
+                    'experience.job4.li2': '.NET Core、Entity Framework Core、LINQ を使用した Web API を構築しました。',
+                    'experience.job4.li3': '5つのソフトウェア開発プロジェクトに参加しました。',
+                    'contact.heading': '一緒に素晴らしいものを作りましょう',
+                    'contact.description': 'コラボレーションの準備はできていますか？次のプロジェクトについて話しましょう',
+                    'contact.labelName': 'お名前',
+                    'contact.placeholderName': 'お名前',
+                    'contact.labelEmail': 'メールアドレス',
+                    'contact.placeholderEmail': 'メールアドレス',
+                    'contact.labelSubject': '件名',
+                    'contact.placeholderSubject': '件名',
+                    'contact.labelMessage': 'メッセージ',
+                    'contact.placeholderMessage': 'メッセージ',
+                    'contact.submit': '送信する',
+                    'language.toggle': '英語と日本語の切り替え',
+                    'education.badge': '学歴',
+                    'education.title': '学歴情報',
+                    'education.degree1': 'コンピュータサイエンス学士 (B.C.Sc)',
+                    'education.school1': 'コンピュータ大学 - モンユワ',
+                    'education.graduation1': '卒業: 2019年2月',
+                    'education.certificate1': 'TOEIC リスニング・リーディング',
+                    'education.certificateDetail1': '英語能力証明 - スコア: 725',
+                    'education.certificate2': 'JLPT N4 資格',
+                    'education.certificateDetail2': '日本語能力試験',
+                    'education.certificateStatus': '認定済み',
+                    'footer.text': '© 2024 Zeyar Win Thu。無断転載を禁じます。'
+                }
+            };
+
+            function translatePage(lang) {
+                const translationsForLang = translations[lang] || translations.en;
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.dataset.i18n;
+                    if (translationsForLang[key]) {
+                        el.textContent = translationsForLang[key];
+                    }
+                });
+                document.querySelectorAll('[data-i18n-html]').forEach(el => {
+                    const key = el.dataset.i18nHtml;
+                    if (translationsForLang[key]) {
+                        el.innerHTML = translationsForLang[key];
+                    }
+                });
+                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                    const key = el.dataset.i18nPlaceholder;
+                    if (translationsForLang[key]) {
+                        el.placeholder = translationsForLang[key];
+                    }
+                });
+                document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+                    const key = el.dataset.i18nAria;
+                    if (translationsForLang[key]) {
+                        el.setAttribute('aria-label', translationsForLang[key]);
+                    }
+                });
+                if (languageToggle) {
+                    languageToggle.dataset.lang = lang;
+                }
+                localStorage.setItem('language', lang);
+            }
+
+            function setTheme(theme) {
+                if (theme === 'light') {
+                    body.classList.add('light-mode');
+                } else {
+                    body.classList.remove('light-mode');
+                }
+                localStorage.setItem('theme', theme);
+            }
+
+            // Load saved theme and language
+            const savedTheme = localStorage.getItem('theme');
+            const savedLanguage = localStorage.getItem('language');
+
+            if (savedTheme) {
+                setTheme(savedTheme);
+            }
+            translatePage(savedLanguage || 'en');
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    const currentTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+                    setTheme(currentTheme);
+                });
+            }
+
+            if (languageToggle) {
+                languageToggle.addEventListener('click', function() {
+                    const currentLang = languageToggle.dataset.lang === 'ja' ? 'en' : 'ja';
+                    translatePage(currentLang);
+                });
+            }
+
+            // Back to Top functionality
+            const backToTopBtn = document.getElementById('back-to-top');
+            if (backToTopBtn) {
+                window.addEventListener('scroll', function() {
+                    if (window.pageYOffset > 300) {
+                        backToTopBtn.classList.add('visible');
+                    } else {
+                        backToTopBtn.classList.remove('visible');
+                    }
+                });
+
+                backToTopBtn.addEventListener('click', function() {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
         });
     </script>
 </body>
