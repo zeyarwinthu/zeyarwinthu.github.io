@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mespeak/1.2.0/mespeak.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mespeak@1.2.0/mespeak.min.js"></script>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -203,8 +203,8 @@
     loadVoices();
     if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
     if (window.meSpeak) {
-      meSpeak.loadConfig('https://cdnjs.cloudflare.com/ajax/libs/mespeak/1.2.0/mespeak_config.json');
-      meSpeak.loadVoice('https://cdnjs.cloudflare.com/ajax/libs/mespeak/1.2.0/voices/en/en-us.json', () => {
+      meSpeak.loadConfig('https://cdn.jsdelivr.net/npm/mespeak@1.2.0/mespeak_config.json');
+      meSpeak.loadVoice('https://cdn.jsdelivr.net/npm/mespeak@1.2.0/voices/en/en-us.json', () => {
         meSpeakReady = true;
         recBtn.disabled = false;
         recBtn.textContent = '⬇ Download';
