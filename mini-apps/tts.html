@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mespeak/1.2.0/mespeak.min.js"></script>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -147,12 +148,12 @@
   <div class="panel">
     <div class="actions">
       <button class="btn-play" id="play">▶ Play</button>
-      <button class="btn-dl" id="record">⬇ Record & Download</button>
+      <button class="btn-dl" id="record" disabled>⬇ Download</button>
       <button class="btn-stop" id="stop">■</button>
     </div>
     <div class="status" id="status"></div>
     <div id="audioSlot"></div>
-    <p class="note">Tip: "Play" previews instantly. "Record & Download" captures the speech to an audio file (.webm) you can save — this plays the audio aloud while recording, so keep your volume on. For best voice quality, use Chrome or Edge on desktop.</p>
+    <p class="note">Tip: "Play" previews instantly. "Download" generates a WAV file directly in the browser so you can save it immediately. For best compatibility, use Chrome or Edge on desktop.</p>
   </div>
 </div>
 
@@ -172,6 +173,7 @@
   const audioSlot = document.getElementById('audioSlot');
 
   let voices = [];
+  let meSpeakReady = false;
 
   function loadVoices() {
     if (!ttsSupported) return;
@@ -200,6 +202,19 @@
   } else {
     loadVoices();
     if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
+    if (window.meSpeak) {
+      meSpeak.loadConfig('https://cdnjs.cloudflare.com/ajax/libs/mespeak/1.2.0/mespeak_config.json');
+      meSpeak.loadVoice('https://cdnjs.cloudflare.com/ajax/libs/mespeak/1.2.0/voices/en/en-us.json', () => {
+        meSpeakReady = true;
+        recBtn.disabled = false;
+        recBtn.textContent = '⬇ Download';
+        status.className = 'status done';
+        status.textContent = 'Direct download ready.';
+      });
+    } else {
+      status.className = 'status';
+      status.textContent = '⚠ Direct download is unavailable because the TTS engine failed to load.';
+    }
   }
 
   rate.oninput = () => rateVal.textContent = parseFloat(rate.value).toFixed(2).replace(/0$/,'') + 'x';
@@ -229,67 +244,44 @@
   // We use an AudioContext + MediaRecorder by routing speechSynthesis through
   // a captured audio stream. SpeechSynthesis output cannot be captured directly,
   // so we use getDisplayMedia with audio to record the tab's audio.
-  recBtn.onclick = async () => {
+  recBtn.onclick = () => {
     if (!textEl.value.trim()) { status.textContent = 'Enter some text first.'; return; }
-
-    try {
-      status.className = 'status'; status.textContent = 'Requesting audio capture permission...';
-      // Ask user to share THIS TAB with audio
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-        preferCurrentTab: true
-      });
-
-      const audioTracks = stream.getAudioTracks();
-      if (!audioTracks.length) {
-        stream.getTracks().forEach(t => t.stop());
-        status.className = 'status';
-        status.textContent = '⚠ No audio captured. When sharing, you MUST tick "Share tab audio".';
-        return;
-      }
-
-      const audioStream = new MediaStream(audioTracks);
-      const chunks = [];
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : '';
-      const recorder = mimeType ? new MediaRecorder(audioStream, { mimeType }) : new MediaRecorder(audioStream);
-      recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
-      recorder.onstop = () => {
-        stream.getTracks().forEach(t => t.stop());
-        if (!chunks.length) {
-          status.className = 'status';
-          status.textContent = '⚠ Recording failed, no audio data was captured.';
-          return;
-        }
-        const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
-        const url = URL.createObjectURL(blob);
-        audioSlot.innerHTML = '';
-        const audio = document.createElement('audio');
-        audio.controls = true; audio.src = url;
-        audioSlot.appendChild(audio);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'voiceforge.webm';
-        a.click();
-        status.className = 'status done';
-        status.textContent = '✓ Saved as voiceforge.webm (also shown above to replay).';
-      };
-
-      recorder.start();
-      const u = makeUtterance();
-      status.className = 'status rec'; status.textContent = '● Recording... speaking now';
-      u.onend = () => setTimeout(() => recorder.stop(), 600);
-      recorder.onstart = () => {
-        synth.cancel();
-        synth.speak(u);
-      };
-    } catch (err) {
+    if (!meSpeakReady) {
       status.className = 'status';
-      status.textContent = '⚠ Capture cancelled or not supported in this browser.';
+      status.textContent = '⚠ Direct download is not ready yet. Please wait a moment and try again.';
+      return;
     }
+
+    status.className = 'status rec';
+    status.textContent = '● Generating audio...';
+    const dataUrl = meSpeak.speak(textEl.value, {
+      rawdata: 'data-url',
+      amplitude: 100,
+      wordgap: 0,
+      pitch: Math.round(parseFloat(pitch.value) * 100),
+      speed: Math.round(parseFloat(rate.value) * 100),
+      variant: 'f2'
+    });
+
+    if (!dataUrl) {
+      status.className = 'status';
+      status.textContent = '⚠ Failed to generate audio.';
+      return;
+    }
+
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'voiceforge.wav';
+    a.click();
+
+    audioSlot.innerHTML = '';
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.src = dataUrl;
+    audioSlot.appendChild(audio);
+
+    status.className = 'status done';
+    status.textContent = '✓ Download started. You can replay the file below.';
   };
 </script>
 </body>
