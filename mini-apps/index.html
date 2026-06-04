@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Apps</title>
+  <style>
+    :root {
+      color: #0f172a;
+      background: #f8fbff;
+      accent: #2563eb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: Inter, system-ui, sans-serif;
+      background: radial-gradient(circle at top, rgba(37,99,235,0.14), transparent 28%), #f8fbff;
+      color: #0f172a;
+    }
+    .panel {
+      width: min(92vw, 520px);
+      background: #ffffff;
+      border: 1px solid rgba(15,23,42,0.08);
+      border-radius: 24px;
+      box-shadow: 0 30px 60px rgba(15,23,42,0.08);
+      padding: 32px;
+    }
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      letter-spacing: -0.04em;
+    }
+    p { margin: 0 0 24px; color: #475569; }
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+    a {
+      display: block;
+      padding: 16px 18px;
+      border-radius: 16px;
+      text-decoration: none;
+      background: #f8fbff;
+      border: 1px solid rgba(37,99,235,0.16);
+      color: #0f172a;
+      font-weight: 600;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    a:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(37,99,235,0.12);
+    }
+    .note { margin-top: 24px; color: #64748b; font-size: 0.93rem; }
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h1>Mini Apps</h1>
+    <p>Open one of the small apps below from the <code>/mini-apps</code> directory.</p>
+    <div class="list">
+      <a href="memory-match.html">Memory Match</a>
+      <a href="tic-tac-toe.html">Tic-Tac-Toe</a>
+      <a href="tts.html">Text-to-Speech</a>
+    </div>
+    <p class="note">GitHub Pages will automatically serve this file at <code>https://zeyarwinthu.github.io/mini-apps</code>.</p>
+  </div>
+</body>
+</html>
