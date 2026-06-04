@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whack-a-Mole</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #2a1a3e; --bg2: #1a1028; --panel: #36234f;
+    --ink: #f3ecff; --muted: #a08cc0; --accent: #ffd166;
+    --dirt: #6b4226; --dirt2: #4a2d18; --hole: #2d1b10;
+    --mole: #b06a3a; --mole2: #8a4f28; --bomb: #2c2c34;
+    --good: #5ee08b; --bad: #ff6b6b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+  body {
+    background: radial-gradient(circle at 50% -10%, #3d2659 0%, var(--bg2) 65%);
+    background-attachment: fixed;
+    color: var(--ink); font-family: 'Baloo 2', cursive, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 14px; padding: 16px;
+  }
+  h1 {
+    font-weight: 800; font-size: clamp(1.7rem, 6vw, 2.4rem); letter-spacing: -0.01em;
+    text-shadow: 0 3px 0 rgba(0,0,0,0.25);
+  }
+  h1 .m { color: var(--accent); }
+
+  .hud {
+    display: flex; gap: 10px; font-family: 'JetBrains Mono', monospace;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .stat {
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 8px 14px; text-align: center; min-width: 70px;
+  }
+  .stat .label { font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .stat .val { font-size: 1.35rem; font-weight: 700; line-height: 1.1; transition: transform 0.12s; }
+  .stat.score .val { color: var(--accent); }
+  .stat.time .val { color: var(--good); }
+  .stat.time.low .val { color: var(--bad); animation: pulse 0.5s infinite alternate; }
+  .stat.combo .val { color: #ff9edb; }
+  .stat.best .val { color: #b8a4ff; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.18); } }
+
+  .board {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 3vw, 18px);
+    width: min(92vw, 420px); position: relative;
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44"><g transform="rotate(-25 22 22)"><rect x="20" y="6" width="6" height="32" rx="1" fill="%23a85c2a" stroke="%235a3018" stroke-width="1.5"/><rect x="8" y="2" width="28" height="14" rx="2" fill="%23b8b8c4" stroke="%23404048" stroke-width="1.5"/><rect x="11" y="4" width="6" height="10" fill="%23dadae4" opacity="0.65"/></g></svg>') 22 8, pointer;
+    transition: transform 0.08s;
+  }
+  .hole { aspect-ratio: 1; position: relative; }
+  .hole-back {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 62%;
+    background: radial-gradient(ellipse at 50% 30%, var(--hole) 0%, var(--dirt2) 70%, var(--dirt) 100%);
+    border-radius: 50%;
+    box-shadow: inset 0 8px 14px rgba(0,0,0,0.6);
+  }
+  .hole-back::after {
+    content:''; position:absolute; top:8%; left:10%; right:10%; height:18%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.04), transparent 70%);
+    border-radius: 50%;
+  }
+  .mole {
+    position: absolute; left: 8%; right: 8%; bottom: 6%;
+    height: 78%;
+    transform: translateY(115%);
+    transition: transform 0.16s cubic-bezier(.3,1.5,.5,1);
+    z-index: 2;
+  }
+  .hole.up .mole { transform: translateY(0); }
+  .hole.bonked .mole { transform: translateY(115%) rotate(12deg); transition: transform 0.12s ease-in; }
+
+  .critter {
+    width: 100%; height: 100%;
+    border-radius: 48% 48% 44% 44% / 55% 55% 45% 45%;
+    position: relative; display: grid; place-items: center;
+    box-shadow: inset 0 -8px 12px rgba(0,0,0,0.25), 0 4px 8px rgba(0,0,0,0.3);
+  }
+  .critter.mole-c { background: linear-gradient(160deg, var(--mole), var(--mole2)); }
+  .critter.bomb-c { background: radial-gradient(circle at 38% 32%, #4a4a55, var(--bomb)); }
+  .critter.gold-c { background: linear-gradient(160deg, #ffd980, #e0a92e); box-shadow: inset 0 -8px 12px rgba(0,0,0,0.2), 0 0 18px rgba(255,209,102,0.6); }
+
+  .face { position: absolute; top: 22%; width: 100%; display: flex; justify-content: center; gap: 18%; z-index: 2; }
+  .eye { width: 13%; aspect-ratio: 1; background: #1a0e08; border-radius: 50%; position: relative; transition: all 0.1s; }
+  .eye::after { content:''; position:absolute; top:12%; left:18%; width:38%; height:38%; background:#fff; border-radius:50%; }
+  .snout {
+    position: absolute; top: 46%; left: 50%; transform: translateX(-50%);
+    width: 34%; aspect-ratio: 1.5; background: #e8a0a0; border-radius: 50%; z-index: 2;
+  }
+  .snout::after { content:''; position:absolute; top:30%; left:34%; width:30%; height:30%; background:#5a2a2a; border-radius:50%; }
+  .ear { position:absolute; top:4%; width:20%; aspect-ratio:1; background: linear-gradient(140deg, var(--mole), var(--mole2)); border-radius:50%; box-shadow: inset 0 -2px 3px rgba(0,0,0,0.25); z-index: 1; }
+  .ear.l { left: 6%; } .ear.r { right: 6%; }
+  .ear::after { content:''; position:absolute; inset:28%; background:#e8a0a0; border-radius:50%; opacity:0.85; }
+
+  .fuse { position:absolute; top:-16%; left:54%; width:8%; height:24%; background:#7a5a3a; border-radius:4px; z-index:1; }
+  .fuse::after { content:'✦'; position:absolute; top:-60%; left:-40%; color:#ff8c42; font-size:0.95rem; text-shadow: 0 0 8px #ffb03a; animation: spark 0.35s infinite alternate; }
+  @keyframes spark { from { opacity:0.5; transform:scale(0.8);} to { opacity:1; transform:scale(1.3);} }
+  .star-mark { position:absolute; top:6%; right:10%; font-size:1rem; z-index: 3; filter: drop-shadow(0 0 4px #fff8b0); animation: twinkle 1s infinite alternate; }
+  @keyframes twinkle { from { transform: scale(1) rotate(0deg);} to { transform: scale(1.15) rotate(15deg);} }
+
+  /* bonked X eyes */
+  .hole.bonked .eye {
+    background:
+      linear-gradient(45deg, transparent 42%, #1a0e08 42%, #1a0e08 58%, transparent 58%),
+      linear-gradient(-45deg, transparent 42%, #1a0e08 42%, #1a0e08 58%, transparent 58%);
+    border-radius: 0;
+    transform: scale(1.5);
+  }
+  .hole.bonked .eye::after { display:none; }
+
+  /* floating score popups */
+  .pop {
+    position: absolute; font-family: 'JetBrains Mono', monospace; font-weight: 700;
+    font-size: 1.1rem; pointer-events: none; z-index: 10;
+    left: 50%; top: 15%;
+    animation: floatUp 0.8s ease-out forwards;
+  }
+  @keyframes floatUp {
+    from { opacity:1; transform: translate(-50%, 0) scale(1);}
+    to { opacity:0; transform: translate(-50%, -48px) scale(1.4);}
+  }
+
+  /* particle burst */
+  .burst { position: absolute; top: 32%; left: 50%; pointer-events: none; z-index: 9; }
+  .burst span {
+    position: absolute; left: 0; top: 0; width: 6px; height: 6px; border-radius: 50%;
+    animation: burst 0.55s ease-out forwards;
+  }
+  @keyframes burst {
+    from { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    to { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); }
+  }
+
+  /* explosion */
+  .boom {
+    position: absolute; top: 42%; left: 50%; transform: translate(-50%,-50%);
+    width: 90%; aspect-ratio: 1; border-radius: 50%; pointer-events: none; z-index: 9;
+    background: radial-gradient(circle, rgba(255,200,60,0.95) 0%, rgba(255,80,40,0.5) 40%, transparent 72%);
+    animation: boomGrow 0.45s ease-out forwards;
+  }
+  @keyframes boomGrow {
+    from { opacity: 1; transform: translate(-50%,-50%) scale(0.2); }
+    to { opacity: 0; transform: translate(-50%,-50%) scale(1.5); }
+  }
+
+  .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-items: center; }
+  .btn {
+    background: var(--accent); color: #3a2a00; border: none; border-radius: 14px;
+    padding: 12px 32px; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 1.05rem;
+    cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; box-shadow: 0 4px 0 #c9a23e;
+  }
+  .btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #c9a23e; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.icon {
+    padding: 12px 16px; min-width: 50px; background: var(--panel); color: var(--ink);
+    box-shadow: 0 4px 0 #1a0f2a; border: 1px solid rgba(255,255,255,0.1);
+    font-size: 1.1rem;
+  }
+  .btn.icon:active:not(:disabled) { box-shadow: 0 1px 0 #1a0f2a; }
+
+  .difficulty { display: flex; gap: 6px; }
+  .diff-btn {
+    background: rgba(255,255,255,0.05); color: var(--muted);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+    padding: 6px 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+    font-weight: 700; cursor: pointer; transition: all 0.15s;
+  }
+  .diff-btn.active { background: var(--accent); color: #3a2a00; border-color: var(--accent); }
+  .diff-btn:hover:not(.active):not(:disabled) { color: var(--ink); border-color: rgba(255,255,255,0.25); }
+  .diff-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .legend { font-size: 0.78rem; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .legend b { color: var(--ink); }
+  .hint { font-size: 0.7rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; opacity: 0.7; }
+
+  /* countdown overlay */
+  .countdown {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    pointer-events: none; z-index: 40; font-size: clamp(5rem, 18vw, 9rem); font-weight: 800;
+    color: var(--accent); text-shadow: 0 0 30px rgba(255,209,102,0.6), 0 6px 0 rgba(0,0,0,0.4);
+    opacity: 0;
+  }
+  .countdown.show { animation: countPulse 0.9s ease-out; }
+  @keyframes countPulse {
+    0% { opacity: 0; transform: scale(0.3); }
+    35% { opacity: 1; transform: scale(1); }
+    70% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.6); }
+  }
+
+  /* pause overlay (subtle) */
+  .pause-veil {
+    position: fixed; inset: 0; background: rgba(20,10,32,0.55); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center; z-index: 35;
+    color: var(--ink); font-size: 2.2rem; font-weight: 800; letter-spacing: 0.08em;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .pause-veil.show { opacity: 1; }
+
+  /* end-of-game overlay */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(20,10,32,0.86); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
+    padding: 32px 30px; text-align: center; width: min(86vw, 340px);
+    transform: scale(0.85); transition: transform 0.35s cubic-bezier(.2,1.4,.4,1);
+  }
+  .overlay.show .modal { transform: scale(1); }
+  .modal .emoji { font-size: 3.2rem; }
+  .modal h2 { font-weight: 800; font-size: 2rem; margin: 6px 0; }
+  .modal .res { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 0.85rem; line-height: 1.8; margin-bottom: 18px; }
+  .modal .res b { color: var(--accent); }
+  .modal .res .new-best {
+    color: var(--good); font-weight: 700; display: block; margin-top: 6px;
+    animation: pulse 0.6s infinite alternate;
+  }
+</style>
+</head>
+<body>
+  <h1>Whack-a-<span class="m">Mole</span> 🔨</h1>
+
+  <div class="hud">
+    <div class="stat score"><div class="label">Score</div><div class="val" id="score">0</div></div>
+    <div class="stat combo"><div class="label">Combo</div><div class="val" id="combo">×1</div></div>
+    <div class="stat time"><div class="label">Time</div><div class="val" id="time">30</div></div>
+    <div class="stat best"><div class="label">Best</div><div class="val" id="best">0</div></div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="controls">
+    <div class="difficulty" id="difficulty">
+      <button class="diff-btn" data-d="easy">Easy</button>
+      <button class="diff-btn active" data-d="normal">Normal</button>
+      <button class="diff-btn" data-d="hard">Hard</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="startBtn">Start Game</button>
+      <button class="btn icon" id="pauseBtn" title="Pause (P or Space)" aria-label="Pause" disabled>⏸</button>
+      <button class="btn icon" id="soundBtn" title="Toggle sound (M)" aria-label="Toggle sound">🔊</button>
+    </div>
+    <div class="legend">
+      <span>🐹 Mole <b>+10</b></span>
+      <span>⭐ Gold <b>+30</b></span>
+      <span>💣 Bomb <b>−15</b></span>
+    </div>
+    <div class="hint">Space = start/pause &nbsp;·&nbsp; P = pause &nbsp;·&nbsp; M = mute</div>
+  </div>
+
+  <div class="countdown" id="countdown"></div>
+  <div class="pause-veil" id="pauseVeil">PAUSED</div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="emoji" id="ovEmoji">🏆</div>
+      <h2 id="ovTitle">Time's Up!</h2>
+      <div class="res" id="ovRes"></div>
+      <button class="btn" id="playAgain">Play Again</button>
+    </div>
+  </div>
+
+<script>
+  const HOLES = 9;
+  const DIFFS = {
+    easy:   { time: 45, spawnBase: 900, spawnMin: 460, bombChance: 0.10, goldChance: 0.14 },
+    normal: { time: 30, spawnBase: 780, spawnMin: 380, bombChance: 0.16, goldChance: 0.13 },
+    hard:   { time: 20, spawnBase: 620, spawnMin: 280, bombChance: 0.22, goldChance: 0.11 }
+  };
+
+  const board = document.getElementById('board');
+  const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
+  const timeEl = document.getElementById('time');
+  const bestEl = document.getElementById('best');
+  const timeStat = timeEl.closest('.stat');
+  const overlay = document.getElementById('overlay');
+  const countdownEl = document.getElementById('countdown');
+  const pauseVeil = document.getElementById('pauseVeil');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const soundBtn = document.getElementById('soundBtn');
+
+  let difficulty = 'normal';
+  let score = 0, combo = 1, bestCombo = 1, timeLeft = DIFFS.normal.time;
+  let playing = false, paused = false, starting = false;
+  let gameTimer = null, spawnTimer = null;
+  const holes = [];
+  const activeMoles = new Set();
+  let muted = localStorage.getItem('wam-muted') === '1';
+  let bestScore = +(localStorage.getItem('wam-best') || 0);
+  bestEl.textContent = bestScore;
+  soundBtn.textContent = muted ? '🔇' : '🔊';
+
+  // ----- audio (Web Audio synth, no asset files) -----
+  let audioCtx = null;
+  function getAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch (e) { return null; }
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function beep(freq, dur, type='sine', vol=0.15, slideTo=null) {
+    if (muted) return;
+    const a = getAudio(); if (!a) return;
+    const o = a.createOscillator();
+    const g = a.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, a.currentTime);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(40, slideTo), a.currentTime + dur);
+    g.gain.setValueAtTime(vol, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start();
+    o.stop(a.currentTime + dur);
+  }
+  function noiseBurst(dur=0.3, vol=0.3, cutoff=800) {
+    if (muted) return;
+    const a = getAudio(); if (!a) return;
+    const bufSize = Math.floor(a.sampleRate * dur);
+    const buf = a.createBuffer(1, bufSize, a.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random()*2-1) * (1 - i/bufSize);
+    const src = a.createBufferSource();
+    src.buffer = buf;
+    const g = a.createGain(); g.gain.value = vol;
+    const filter = a.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.value = cutoff;
+    src.connect(filter); filter.connect(g); g.connect(a.destination);
+    src.start();
+  }
+  const sfx = {
+    whack() { beep(540, 0.07, 'square', 0.18, 280); },
+    gold()  { beep(880, 0.08, 'triangle', 0.18); setTimeout(()=>beep(1320, 0.12, 'triangle', 0.16), 60); setTimeout(()=>beep(1760, 0.1, 'triangle', 0.12), 130); },
+    bomb()  { noiseBurst(0.35, 0.35, 600); beep(90, 0.3, 'sawtooth', 0.22, 40); },
+    miss()  { beep(220, 0.08, 'sine', 0.08, 130); },
+    count() { beep(700, 0.1, 'sine', 0.15); },
+    go()    { beep(1000, 0.22, 'sine', 0.2, 1500); },
+    end()   { beep(600, 0.15, 'triangle', 0.18); setTimeout(()=>beep(400, 0.28, 'triangle', 0.18), 160); }
+  };
+
+  // ----- build holes -----
+  const MOLE_HTML = '<div class="ear l"></div><div class="ear r"></div><div class="face"><div class="eye"></div><div class="eye"></div></div><div class="snout"></div>';
+  for (let i = 0; i < HOLES; i++) {
+    const hole = document.createElement('div');
+    hole.className = 'hole';
+    hole.dataset.i = i;
+    hole.innerHTML = `<div class="hole-back"></div>
+      <div class="mole"><div class="critter mole-c">${MOLE_HTML}</div></div>`;
+    hole.addEventListener('mousedown', () => whack(i));
+    hole.addEventListener('touchstart', e => { e.preventDefault(); whack(i); }, {passive:false});
+    board.appendChild(hole);
+    holes.push({ el: hole, type: null, timeout: null });
+  }
+
+  const TYPES = {
+    mole: { cls: 'mole-c', html: MOLE_HTML, points: 10 },
+    gold: { cls: 'gold-c', html: '<div class="star-mark">⭐</div>' + MOLE_HTML, points: 30 },
+    bomb: { cls: 'bomb-c', html: '<div class="fuse"></div><div class="face"><div class="eye"></div><div class="eye"></div></div>', points: -15 }
+  };
+
+  function setCritter(hole, type) {
+    const critter = hole.el.querySelector('.critter');
+    const t = TYPES[type];
+    critter.className = 'critter ' + t.cls;
+    critter.innerHTML = t.html;
+  }
+
+  function popUp() {
+    if (!playing || paused) return;
+    const free = [];
+    for (let i = 0; i < HOLES; i++) if (!activeMoles.has(i)) free.push(i);
+    if (free.length === 0) return;
+    const i = free[Math.floor(Math.random()*free.length)];
+    const h = holes[i];
+
+    const d = DIFFS[difficulty];
+    const r = Math.random();
+    const type = r < d.bombChance ? 'bomb' : r < d.bombChance + d.goldChance ? 'gold' : 'mole';
+    h.type = type;
+    setCritter(h, type);
+    h.el.classList.remove('bonked');
+    h.el.classList.add('up');
+    activeMoles.add(i);
+
+    const base = type === 'gold' ? 700 : 950;
+    const elapsed = d.time - timeLeft;
+    const dur = Math.max(420, base + Math.random()*350 - elapsed * 8);
+    h.timeout = setTimeout(() => hide(i, true), dur);
+  }
+
+  function hide(i, naturalExpire) {
+    const h = holes[i];
+    h.el.classList.remove('up');
+    activeMoles.delete(i);
+    clearTimeout(h.timeout);
+    h.timeout = null;
+    if (naturalExpire && playing && (h.type === 'mole' || h.type === 'gold')) {
+      combo = 1; updateCombo();
+      sfx.miss();
+    }
+    h.type = null;
+  }
+
+  function whack(i) {
+    // ensure audio is unlocked on first user gesture
+    getAudio();
+    if (!playing || paused) return;
+    const h = holes[i];
+    if (!h.el.classList.contains('up') || h.el.classList.contains('bonked')) return;
+
+    const type = h.type;
+    h.el.classList.add('bonked');
+    clearTimeout(h.timeout);
+    h.timeout = null;
+    activeMoles.delete(i);
+    swingBoard();
+
+    let pts;
+    if (type === 'bomb') {
+      pts = TYPES.bomb.points;
+      combo = 1; updateCombo();
+      showPop(h.el, '💥' + pts, 'var(--bad)');
+      explosion(h.el);
+      shake();
+      sfx.bomb();
+    } else {
+      pts = Math.round(TYPES[type].points * combo);
+      combo = Math.min(combo + 1, 8);
+      if (combo > bestCombo) bestCombo = combo;
+      updateCombo();
+      showPop(h.el, '+' + pts, type === 'gold' ? 'var(--accent)' : 'var(--good)');
+      sparkBurst(h.el, type === 'gold' ? '#ffd166' : '#fff8c4');
+      (type === 'gold' ? sfx.gold : sfx.whack)();
+    }
+    score = Math.max(0, score + pts);
+    scoreEl.textContent = score;
+    bumpStat(scoreEl);
+    h.type = null;
+    setTimeout(() => h.el.classList.remove('up','bonked'), 160);
+  }
+
+  function bumpStat(el) {
+    el.style.transform = 'scale(1.25)';
+    setTimeout(() => el.style.transform = '', 130);
+  }
+  function updateCombo() {
+    comboEl.textContent = '×' + combo;
+    bumpStat(comboEl);
+  }
+
+  function showPop(holeEl, text, color) {
+    const pop = document.createElement('div');
+    pop.className = 'pop';
+    pop.textContent = text;
+    pop.style.color = color;
+    holeEl.appendChild(pop);
+    setTimeout(() => pop.remove(), 800);
+  }
+
+  function sparkBurst(holeEl, color) {
+    const wrap = document.createElement('div');
+    wrap.className = 'burst';
+    const n = 8;
+    for (let k = 0; k < n; k++) {
+      const s = document.createElement('span');
+      const a = (k / n) * Math.PI * 2 + Math.random() * 0.4;
+      const dist = 28 + Math.random() * 22;
+      s.style.setProperty('--dx', Math.cos(a) * dist + 'px');
+      s.style.setProperty('--dy', Math.sin(a) * dist + 'px');
+      s.style.background = color;
+      s.style.boxShadow = '0 0 6px ' + color;
+      wrap.appendChild(s);
+    }
+    holeEl.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 560);
+  }
+
+  function explosion(holeEl) {
+    const b = document.createElement('div');
+    b.className = 'boom';
+    holeEl.appendChild(b);
+    setTimeout(() => b.remove(), 460);
+  }
+
+  function swingBoard() {
+    board.style.transform = 'translateY(2px) rotate(-0.4deg)';
+    setTimeout(() => board.style.transform = '', 90);
+  }
+
+  function shake() {
+    board.animate([
+      { transform: 'translateX(0)' }, { transform: 'translateX(-7px)' },
+      { transform: 'translateX(7px)' }, { transform: 'translateX(-4px)' },
+      { transform: 'translateX(0)' }
+    ], { duration: 220 });
+  }
+
+  // ----- countdown -----
+  function showCountdown(text) {
+    return new Promise(resolve => {
+      countdownEl.textContent = text;
+      countdownEl.classList.remove('show');
+      void countdownEl.offsetWidth; // restart animation
+      countdownEl.classList.add('show');
+      setTimeout(resolve, 800);
+    });
+  }
+
+  async function start() {
+    if (starting) return;
+    starting = true;
+    cleanupGame();
+    score = 0; combo = 1; bestCombo = 1;
+    const d = DIFFS[difficulty];
+    timeLeft = d.time;
+    scoreEl.textContent = 0;
+    comboEl.textContent = '×1';
+    timeEl.textContent = timeLeft;
+    timeStat.classList.remove('low');
+    overlay.classList.remove('show');
+    pauseVeil.classList.remove('show');
+    startBtn.disabled = true;
+    pauseBtn.disabled = true;
+    document.querySelectorAll('.diff-btn').forEach(b => b.disabled = true);
+    holes.forEach((_, i) => hide(i, false));
+
+    getAudio(); // unlock audio on user gesture
+    try {
+      for (const t of ['3','2','1']) { sfx.count(); await showCountdown(t); }
+      sfx.go(); await showCountdown('GO!');
+    } finally {
+      starting = false;
+    }
+
+    playing = true; paused = false;
+    startBtn.textContent = 'Restart';
+    startBtn.disabled = false;
+    pauseBtn.disabled = false;
+    pauseBtn.textContent = '⏸';
+
+    gameTimer = setInterval(() => {
+      if (paused) return;
+      timeLeft--;
+      timeEl.textContent = timeLeft;
+      if (timeLeft <= 5) timeStat.classList.add('low');
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+
+    scheduleSpawn();
+  }
+
+  function scheduleSpawn() {
+    if (!playing) return;
+    if (!paused) {
+      popUp();
+      if (Math.random() < 0.35) popUp();
+    }
+    const d = DIFFS[difficulty];
+    const progress = Math.max(0, Math.min(1, (d.time - timeLeft) / d.time));
+    const rate = Math.max(d.spawnMin, d.spawnBase - progress * (d.spawnBase - d.spawnMin));
+    spawnTimer = setTimeout(scheduleSpawn, rate);
+  }
+
+  function cleanupGame() {
+    playing = false; paused = false;
+    clearInterval(gameTimer); gameTimer = null;
+    clearTimeout(spawnTimer); spawnTimer = null;
+    holes.forEach((h, i) => {
+      if (h.timeout) clearTimeout(h.timeout);
+      h.timeout = null;
+      h.type = null;
+      h.el.classList.remove('up', 'bonked');
+    });
+    activeMoles.clear();
+    pauseVeil.classList.remove('show');
+  }
+
+  function togglePause() {
+    if (!playing) return;
+    paused = !paused;
+    pauseBtn.textContent = paused ? '▶' : '⏸';
+    pauseBtn.setAttribute('aria-label', paused ? 'Resume' : 'Pause');
+    pauseVeil.classList.toggle('show', paused);
+    if (paused) {
+      holes.forEach((h, i) => { if (activeMoles.has(i)) clearTimeout(h.timeout); });
+    } else {
+      holes.forEach((h, i) => {
+        if (activeMoles.has(i)) h.timeout = setTimeout(() => hide(i, true), 600);
+      });
+    }
+  }
+
+  function endGame() {
+    cleanupGame();
+    sfx.end();
+    const isNewBest = score > bestScore;
+    if (isNewBest) {
+      bestScore = score;
+      localStorage.setItem('wam-best', String(bestScore));
+      bestEl.textContent = bestScore;
+    }
+    const emoji = score >= 300 ? '🏆' : score >= 150 ? '🎉' : score > 0 ? '👍' : '🙈';
+    const msg = score >= 300 ? 'Mole master!' : score >= 150 ? 'Nicely whacked!' : score > 0 ? 'Not bad!' : 'They got away…';
+    document.getElementById('ovEmoji').textContent = emoji;
+    document.getElementById('ovRes').innerHTML =
+      `${msg}<br>Final score: <b>${score}</b><br>Best combo: <b>×${bestCombo}</b>` +
+      (isNewBest ? `<span class="new-best">★ NEW BEST! ★</span>` : '');
+    pauseBtn.disabled = true;
+    document.querySelectorAll('.diff-btn').forEach(b => b.disabled = false);
+    startBtn.textContent = 'Start Game';
+    setTimeout(() => overlay.classList.add('show'), 380);
+  }
+
+  // ----- controls -----
+  startBtn.onclick = start;
+  document.getElementById('playAgain').onclick = start;
+  pauseBtn.onclick = togglePause;
+  soundBtn.onclick = () => {
+    muted = !muted;
+    localStorage.setItem('wam-muted', muted ? '1' : '0');
+    soundBtn.textContent = muted ? '🔇' : '🔊';
+    if (!muted) { getAudio(); sfx.count(); }
+  };
+
+  document.querySelectorAll('.diff-btn').forEach(b => {
+    b.onclick = () => {
+      if (playing || starting) return;
+      document.querySelectorAll('.diff-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      difficulty = b.dataset.d;
+      timeLeft = DIFFS[difficulty].time;
+      timeEl.textContent = timeLeft;
+    };
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (overlay.classList.contains('show')) start();
+      else if (!playing && !starting) start();
+      else if (playing) togglePause();
+    } else if (e.key.toLowerCase() === 'p') {
+      togglePause();
+    } else if (e.key.toLowerCase() === 'm') {
+      soundBtn.click();
+    }
+  });
+</script>
+</body>
+</html>

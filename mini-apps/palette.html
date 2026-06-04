@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Palette Forge</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0d10; --panel: #15171c; --edge: #262a32;
+    --ink: #eef1f6; --muted: #828b9c; --accent: #6c8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+  }
+
+  .topbar {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    background: var(--panel); border-bottom: 1px solid var(--edge); flex-wrap: wrap; flex-shrink: 0;
+  }
+  .logo { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.02em; margin-right: auto; }
+  .logo span { color: var(--accent); }
+
+  .harmony {
+    display: flex; gap: 3px; background: var(--bg); padding: 3px; border-radius: 10px; border: 1px solid var(--edge);
+    flex-wrap: wrap;
+  }
+  .harmony button {
+    background: transparent; border: none; color: var(--muted); padding: 6px 10px;
+    border-radius: 7px; cursor: pointer; font-family: inherit; font-size: 0.74rem; font-weight: 500;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .harmony button.active { background: var(--accent); color: #fff; }
+  .harmony button:hover:not(.active) { color: var(--ink); }
+
+  .actions { display: flex; gap: 6px; align-items: center; }
+  .actions button {
+    background: var(--bg); border: 1px solid var(--edge); color: var(--ink);
+    height: 34px; padding: 0 12px; border-radius: 9px; cursor: pointer; font-family: inherit;
+    font-size: 0.78rem; font-weight: 500; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .actions button:hover:not(:disabled) { border-color: var(--accent); }
+  .actions button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .actions .icon-only { width: 34px; padding: 0; justify-content: center; font-size: 0.95rem; }
+  .actions .primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ---- Palette ---- */
+  .palette { flex: 1; display: flex; min-height: 0; position: relative; }
+  .swatch {
+    flex: 1; position: relative; display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-end; padding-bottom: 7%;
+    cursor: pointer; transition: flex 0.3s; min-width: 0;
+  }
+  .swatch.dragging { opacity: 0.35; }
+  .swatch.drop-before::before, .swatch.drop-after::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 3px; background: var(--accent); z-index: 5;
+  }
+  .swatch.drop-before::before { left: -1px; }
+  .swatch.drop-after::after { right: -1px; }
+
+  .swatch .tools {
+    display: flex; flex-direction: column; gap: 9px; align-items: center;
+    opacity: 0; transition: opacity 0.2s; margin-bottom: 14px;
+  }
+  .swatch:hover .tools, .swatch:focus-within .tools { opacity: 1; }
+  @media (hover: none) { .swatch .tools { opacity: 0.85; } }
+
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
+    background: rgba(0,0,0,0.18); color: inherit; display: grid; place-items: center;
+    font-size: 0.95rem; transition: transform 0.12s, background 0.15s;
+  }
+  .icon-btn:hover { transform: scale(1.15); background: rgba(0,0,0,0.3); }
+  .icon-btn.locked { background: rgba(0,0,0,0.5); }
+  .drag-handle { cursor: grab; }
+  .drag-handle:active { cursor: grabbing; }
+
+  .hex {
+    font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: clamp(0.85rem, 2.3vw, 1.2rem);
+    letter-spacing: 0.05em; cursor: pointer; padding: 5px 9px; border-radius: 7px;
+    transition: background 0.15s; text-transform: uppercase;
+  }
+  .hex:hover { background: rgba(0,0,0,0.14); }
+  .sw-name { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 500; opacity: 0.7; margin-top: 2px; }
+  .sw-contrast {
+    margin-top: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem;
+    letter-spacing: 0.04em; opacity: 0.55; display: flex; gap: 8px;
+  }
+  .sw-contrast b { font-weight: 600; }
+
+  .hidden-color {
+    position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; top: 0; left: 0;
+  }
+
+  /* between-swatch insert */
+  .insert-btn {
+    position: absolute; top: 50%; transform: translate(-50%, -50%); z-index: 6;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--panel);
+    border: 1px solid var(--edge); color: var(--muted); cursor: pointer;
+    display: grid; place-items: center; font-size: 1rem; font-weight: 600;
+    opacity: 0; transition: opacity 0.18s, transform 0.12s, color 0.15s, border-color 0.15s; padding: 0;
+  }
+  .palette:hover .insert-btn { opacity: 0.92; }
+  .insert-btn:hover { transform: translate(-50%, -50%) scale(1.18); border-color: var(--accent); color: var(--accent); }
+  .insert-btn:disabled { opacity: 0 !important; pointer-events: none; }
+
+  .copied-toast {
+    position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--bg); padding: 10px 20px; border-radius: 11px;
+    font-size: 0.83rem; font-weight: 600; opacity: 0; pointer-events: none;
+    transition: all 0.25s; z-index: 100;
+  }
+  .copied-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .footer-hint {
+    text-align: center; padding: 8px 12px; font-size: 0.7rem; color: var(--muted);
+    background: var(--panel); border-top: 1px solid var(--edge); flex-shrink: 0; line-height: 1.5;
+  }
+  .footer-hint kbd {
+    background: var(--bg); border: 1px solid var(--edge); border-radius: 5px;
+    padding: 1px 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--ink);
+  }
+  .footer-hint .sep { opacity: 0.4; margin: 0 5px; }
+
+  /* ---- Modal ---- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(8,9,12,0.82); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; z-index: 80;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s; padding: 20px;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 18px;
+    padding: 22px; width: min(92vw, 540px); max-height: 86vh; overflow-y: auto;
+    transform: scale(0.92); transition: transform 0.28s;
+  }
+  .overlay.show .modal { transform: scale(1); }
+  .modal h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 3px; }
+  .modal .sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 14px; }
+  .fmt-tabs { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
+  .fmt-tabs button {
+    background: var(--bg); border: 1px solid var(--edge); color: var(--muted);
+    padding: 6px 11px; border-radius: 7px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.73rem;
+  }
+  .fmt-tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .fmt-tabs button:hover:not(.active) { color: var(--ink); }
+  .code-box {
+    background: var(--bg); border: 1px solid var(--edge); border-radius: 10px;
+    padding: 13px; font-family: 'JetBrains Mono', monospace; font-size: 0.77rem;
+    color: var(--ink); white-space: pre; overflow: auto; line-height: 1.55;
+    min-height: 130px; max-height: 280px;
+  }
+  .modal-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .modal-actions button {
+    flex: 1; min-width: 90px; border: none; border-radius: 9px; padding: 11px; cursor: pointer;
+    font-family: inherit; font-weight: 600; font-size: 0.82rem; transition: transform 0.12s;
+  }
+  .modal-actions button:hover { transform: translateY(-2px); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: var(--bg); color: var(--ink); border: 1px solid var(--edge) !important; }
+
+  /* ---- Saved palettes ---- */
+  .saved-list { display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; padding-right: 2px; }
+  .saved-row {
+    display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 10px;
+    background: var(--bg); border: 1px solid var(--edge); transition: border-color 0.15s;
+  }
+  .saved-row:hover { border-color: var(--accent); }
+  .saved-row .strip { display: flex; flex: 1; height: 36px; border-radius: 6px; overflow: hidden; cursor: pointer; }
+  .saved-row .strip div { flex: 1; }
+  .saved-row .meta { font-size: 0.7rem; color: var(--muted); min-width: 70px; text-align: right; }
+  .saved-row .del {
+    background: transparent; border: none; color: var(--muted); cursor: pointer;
+    font-size: 1rem; padding: 4px 8px; border-radius: 6px;
+  }
+  .saved-row .del:hover { color: #ff7676; background: rgba(255,118,118,0.08); }
+  .saved-empty { color: var(--muted); font-size: 0.82rem; text-align: center; padding: 28px 0; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">Palette<span>Forge</span></div>
+    <div class="harmony" id="harmony">
+      <button data-mode="auto" class="active">Auto</button>
+      <button data-mode="analogous">Analogous</button>
+      <button data-mode="monochrome">Mono</button>
+      <button data-mode="complementary">Complement</button>
+      <button data-mode="split">Split</button>
+      <button data-mode="triadic">Triadic</button>
+      <button data-mode="tetradic">Tetradic</button>
+    </div>
+    <div class="actions">
+      <button id="undoBtn" class="icon-only" title="Undo (Ctrl+Z)">↶</button>
+      <button id="redoBtn" class="icon-only" title="Redo (Ctrl+Y)">↷</button>
+      <button id="saveBtn" class="icon-only" title="Save palette">★</button>
+      <button id="libBtn">Library</button>
+      <button id="exportBtn">⇪ Export</button>
+      <button class="primary" id="genBtn">↻ Generate</button>
+    </div>
+  </div>
+
+  <div class="palette" id="palette"></div>
+
+  <div class="footer-hint">
+    <kbd>Space</kbd> generate <span class="sep">·</span>
+    <kbd>L</kbd> lock hovered <span class="sep">·</span>
+    <kbd>C</kbd> copy hovered <span class="sep">·</span>
+    <kbd>←</kbd>/<kbd>→</kbd> undo/redo <span class="sep">·</span>
+    drag <kbd>⋮⋮</kbd> to reorder <span class="sep">·</span>
+    click <kbd>+</kbd> between swatches to add
+  </div>
+
+  <div class="copied-toast" id="toast">Copied!</div>
+
+  <!-- Export modal -->
+  <div class="overlay" id="exportOverlay">
+    <div class="modal">
+      <h3>Export Palette</h3>
+      <div class="sub">Copy code or download an image</div>
+      <div class="fmt-tabs" id="fmtTabs">
+        <button data-fmt="hex" class="active">HEX</button>
+        <button data-fmt="rgb">RGB</button>
+        <button data-fmt="hsl">HSL</button>
+        <button data-fmt="css">CSS vars</button>
+        <button data-fmt="scss">SCSS</button>
+        <button data-fmt="tailwind">Tailwind</button>
+        <button data-fmt="json">JSON</button>
+        <button data-fmt="contrast">Contrast</button>
+      </div>
+      <div class="code-box" id="codeBox"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="closeExport">Close</button>
+        <button class="btn-ghost" id="dlSvg">Download SVG</button>
+        <button class="btn-ghost" id="dlPng">Download PNG</button>
+        <button class="btn-primary" id="copyCode">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Library modal -->
+  <div class="overlay" id="libOverlay">
+    <div class="modal">
+      <h3>Saved Palettes</h3>
+      <div class="sub">Click a palette to load it</div>
+      <div class="saved-list" id="savedList"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="closeLib">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const MIN_COUNT = 3, MAX_COUNT = 8;
+  const paletteEl = document.getElementById('palette');
+  const undoBtn = document.getElementById('undoBtn');
+  const redoBtn = document.getElementById('redoBtn');
+  const toast = document.getElementById('toast');
+
+  let mode = 'auto';
+  let colors = []; // {h,s,l, locked}
+  let hoveredIdx = -1;
+
+  // ---------- History ----------
+  const histStack = [];
+  let histIndex = -1;
+  const HIST_MAX = 80;
+
+  function snapshot() {
+    return { colors: colors.map(c => ({...c})), mode };
+  }
+  function pushHistory() {
+    histStack.length = histIndex + 1;
+    histStack.push(snapshot());
+    if (histStack.length > HIST_MAX) histStack.shift();
+    histIndex = histStack.length - 1;
+    updateHistButtons();
+  }
+  function applySnapshot(s) {
+    colors = s.colors.map(c => ({...c}));
+    mode = s.mode;
+    document.querySelectorAll('#harmony button').forEach(x =>
+      x.classList.toggle('active', x.dataset.mode === mode));
+    render();
+  }
+  function undo() {
+    if (histIndex <= 0) return;
+    histIndex--;
+    applySnapshot(histStack[histIndex]);
+    updateHistButtons();
+  }
+  function redo() {
+    if (histIndex >= histStack.length - 1) return;
+    histIndex++;
+    applySnapshot(histStack[histIndex]);
+    updateHistButtons();
+  }
+  function updateHistButtons() {
+    undoBtn.disabled = histIndex <= 0;
+    redoBtn.disabled = histIndex >= histStack.length - 1;
+  }
+  undoBtn.onclick = undo;
+  redoBtn.onclick = redo;
+
+  // ---------- Color math ----------
+  function hslToRgb(h, s, l) {
+    s/=100; l/=100;
+    const k = n => (n + h/30) % 12;
+    const a = s * Math.min(l, 1-l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n), 1)));
+    return [Math.round(255*f(0)), Math.round(255*f(8)), Math.round(255*f(4))];
+  }
+  function rgbToHex(r,g,b) {
+    return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+  }
+  function hslToHex(h,s,l) { return rgbToHex(...hslToRgb(h,s,l)); }
+  function hexToHsl(hex) {
+    hex = hex.replace('#','');
+    if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+    if (hex.length !== 6 || !/^[0-9a-f]{6}$/i.test(hex)) return null;
+    const r = parseInt(hex.slice(0,2),16)/255;
+    const g = parseInt(hex.slice(2,4),16)/255;
+    const b = parseInt(hex.slice(4,6),16)/255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    let h, s, l = (max+min)/2;
+    if (max === min) { h = 0; s = 0; }
+    else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch(max) {
+        case r: h = (g-b)/d + (g<b?6:0); break;
+        case g: h = (b-r)/d + 2; break;
+        case b: h = (r-g)/d + 4; break;
+      }
+      h *= 60;
+    }
+    return { h: Math.round(h), s: Math.round(s*100), l: Math.round(l*100) };
+  }
+  function luminance(r,g,b) {
+    const a = [r,g,b].map(v => { v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); });
+    return 0.2126*a[0] + 0.7152*a[1] + 0.0722*a[2];
+  }
+  function contrastRatio(l1, l2) {
+    return (Math.max(l1,l2) + 0.05) / (Math.min(l1,l2) + 0.05);
+  }
+  function textColorFor(r,g,b) { return luminance(r,g,b) > 0.42 ? '#15171c' : '#ffffff'; }
+
+  function colorName(h,s,l) {
+    if (l < 12) return 'Black';
+    if (l > 92 && s < 12) return 'White';
+    if (s < 12) return l < 45 ? 'Charcoal' : 'Gray';
+    const hues = [[15,'Red'],[45,'Orange'],[65,'Yellow'],[160,'Green'],[200,'Teal'],[250,'Blue'],[290,'Purple'],[330,'Magenta'],[360,'Red']];
+    let base = 'Red';
+    for (const [max,name] of hues) { if (h <= max) { base = name; break; } }
+    const tone = l > 70 ? 'Light ' : l < 35 ? 'Deep ' : '';
+    return tone + base;
+  }
+
+  // ---------- Generation ----------
+  function rand(min,max){ return Math.random()*(max-min)+min; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+
+  function generate() {
+    const baseHue = rand(0,360);
+    const baseSat = rand(55,85);
+    const baseLight = rand(45,60);
+    const N = colors.length || 5;
+    const newColors = [];
+
+    for (let i=0; i<N; i++) {
+      if (colors[i] && colors[i].locked) { newColors.push(colors[i]); continue; }
+      let h, s, l;
+      const t = N > 1 ? i / (N - 1) : 0.5;
+      switch(mode) {
+        case 'analogous':
+          h = (baseHue + (i - (N-1)/2) * 28 + 360) % 360;
+          s = baseSat + rand(-8, 8);
+          l = baseLight + (i - (N-1)/2) * 6;
+          break;
+        case 'monochrome':
+          h = baseHue + rand(-6, 6);
+          s = baseSat + rand(-15, 5);
+          l = 18 + t * 64;
+          break;
+        case 'complementary': {
+          const offset = (i % 2) ? 180 : 0;
+          h = (baseHue + offset + Math.floor(i/2) * 10) % 360;
+          s = baseSat + rand(-10, 5);
+          l = 32 + (i % 3) * 16;
+          break;
+        }
+        case 'split': {
+          const offsets = [0, 150, 210];
+          h = (baseHue + offsets[i % 3] + Math.floor(i/3) * 10) % 360;
+          s = baseSat + rand(-10, 5);
+          l = 38 + (i % 2) * 18;
+          break;
+        }
+        case 'triadic':
+          h = (baseHue + (i % 3) * 120 + Math.floor(i/3) * 15) % 360;
+          s = baseSat + rand(-10, 5);
+          l = 38 + (i % 2) * 18;
+          break;
+        case 'tetradic': {
+          const offsets = [0, 60, 180, 240];
+          h = (baseHue + offsets[i % 4] + Math.floor(i/4) * 10) % 360;
+          s = baseSat + rand(-10, 5);
+          l = 38 + (i % 2) * 18;
+          break;
+        }
+        default: // auto
+          h = (baseHue + i * rand(25, 55)) % 360;
+          s = rand(50, 88);
+          l = rand(38, 68);
+      }
+      s = clamp(s, 15, 95);
+      l = clamp(l, 14, 90);
+      newColors.push({ h: Math.round((h+360)%360), s: Math.round(s), l: Math.round(l), locked: false });
+    }
+    colors = newColors;
+    pushHistory();
+    render();
+  }
+
+  function shuffleOne(i) {
+    if (colors[i].locked) return;
+    colors[i] = {
+      h: Math.round(rand(0,360)),
+      s: Math.round(rand(45,90)),
+      l: Math.round(rand(30,70)),
+      locked: false
+    };
+    pushHistory();
+    render();
+  }
+
+  function setColor(i, hex) {
+    const hsl = hexToHsl(hex);
+    if (!hsl) return;
+    colors[i] = { ...hsl, locked: colors[i].locked };
+    pushHistory();
+    render();
+  }
+
+  function toggleLock(i) {
+    colors[i].locked = !colors[i].locked;
+    pushHistory();
+    render();
+  }
+
+  function insertAt(i) {
+    if (colors.length >= MAX_COUNT) return;
+    const left  = colors[i - 1];
+    const right = colors[i];
+    let c;
+    if (left && right) {
+      c = { h: Math.round((left.h + right.h) / 2),
+            s: Math.round((left.s + right.s) / 2),
+            l: Math.round((left.l + right.l) / 2),
+            locked: false };
+    } else {
+      c = { h: Math.round(rand(0,360)), s: Math.round(rand(55,85)), l: Math.round(rand(40,65)), locked: false };
+    }
+    colors.splice(i, 0, c);
+    pushHistory();
+    render();
+  }
+
+  function removeAt(i) {
+    if (colors.length <= MIN_COUNT) return;
+    colors.splice(i, 1);
+    pushHistory();
+    render();
+  }
+
+  // ---------- Drag & drop ----------
+  let dragFrom = null;
+  function clearDropMarkers() {
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('drop-before','drop-after','dragging'));
+  }
+
+  // ---------- Render ----------
+  function render() {
+    paletteEl.innerHTML = '';
+    hoveredIdx = -1;
+    colors.forEach((c, i) => {
+      const [r,g,b] = hslToRgb(c.h, c.s, c.l);
+      const hex = rgbToHex(r,g,b);
+      const txt = textColorFor(r,g,b);
+      const lum = luminance(r,g,b);
+      const cW = contrastRatio(lum, 1.0).toFixed(1);
+      const cB = contrastRatio(lum, 0.0).toFixed(1);
+
+      const sw = document.createElement('div');
+      sw.className = 'swatch';
+      sw.style.background = hex;
+      sw.style.color = txt;
+      sw.dataset.idx = i;
+
+      const canRemove = colors.length > MIN_COUNT;
+
+      sw.innerHTML = `
+        <div class="tools">
+          <button class="icon-btn drag-handle" title="Drag to reorder">⋮⋮</button>
+          <button class="icon-btn lock ${c.locked?'locked':''}" title="Lock (L)">${c.locked?'🔒':'🔓'}</button>
+          <button class="icon-btn edit" title="Edit color">✎</button>
+          <button class="icon-btn shuffle" title="Shuffle this one">🎲</button>
+          ${canRemove ? `<button class="icon-btn remove" title="Remove">✕</button>` : ''}
+        </div>
+        <div class="hex" title="Click to copy">${hex.toUpperCase()}</div>
+        <div class="sw-name">${colorName(c.h,c.s,c.l)}</div>
+        <div class="sw-contrast"><span>vs ⚪ <b>${cW}</b></span><span>vs ⚫ <b>${cB}</b></span></div>
+        <input type="color" class="hidden-color" value="${hex}">
+      `;
+
+      // Drag handle controls drag of the swatch
+      const handle = sw.querySelector('.drag-handle');
+      handle.addEventListener('mousedown', () => sw.draggable = true);
+      handle.addEventListener('mouseup',   () => sw.draggable = false);
+      handle.addEventListener('touchstart', () => sw.draggable = true, { passive: true });
+
+      sw.addEventListener('dragstart', e => {
+        if (!sw.draggable) { e.preventDefault(); return; }
+        dragFrom = i;
+        sw.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        // some browsers need any data
+        try { e.dataTransfer.setData('text/plain', String(i)); } catch {}
+      });
+      sw.addEventListener('dragover', e => {
+        if (dragFrom === null || dragFrom === i) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const rect = sw.getBoundingClientRect();
+        const before = (e.clientX - rect.left) < rect.width / 2;
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('drop-before','drop-after'));
+        sw.classList.add(before ? 'drop-before' : 'drop-after');
+      });
+      sw.addEventListener('drop', e => {
+        e.preventDefault();
+        if (dragFrom === null || dragFrom === i) { clearDropMarkers(); dragFrom = null; return; }
+        const rect = sw.getBoundingClientRect();
+        const before = (e.clientX - rect.left) < rect.width / 2;
+        let target = before ? i : i + 1;
+        if (dragFrom < target) target--;
+        const [moved] = colors.splice(dragFrom, 1);
+        colors.splice(target, 0, moved);
+        dragFrom = null;
+        pushHistory();
+        render();
+      });
+      sw.addEventListener('dragend', () => { clearDropMarkers(); dragFrom = null; sw.draggable = false; });
+
+      // Hover tracking for keyboard shortcuts
+      sw.addEventListener('mouseenter', () => { hoveredIdx = i; });
+      sw.addEventListener('mouseleave', () => { if (hoveredIdx === i) hoveredIdx = -1; });
+
+      // Buttons
+      sw.querySelector('.lock').onclick     = e => { e.stopPropagation(); toggleLock(i); };
+      sw.querySelector('.shuffle').onclick  = e => { e.stopPropagation(); shuffleOne(i); };
+      sw.querySelector('.hex').onclick      = e => { e.stopPropagation(); copy(hex.toUpperCase()); };
+      const removeBtn = sw.querySelector('.remove');
+      if (removeBtn) removeBtn.onclick = e => { e.stopPropagation(); removeAt(i); };
+
+      const edit = sw.querySelector('.edit');
+      const cinp = sw.querySelector('.hidden-color');
+      edit.onclick = e => { e.stopPropagation(); cinp.click(); };
+      cinp.onchange = e => setColor(i, e.target.value);
+
+      paletteEl.appendChild(sw);
+    });
+
+    // Insert buttons at every boundary (between swatches + ends)
+    if (colors.length < MAX_COUNT && colors.length > 0) {
+      for (let k = 0; k <= colors.length; k++) {
+        const btn = document.createElement('button');
+        btn.className = 'insert-btn';
+        btn.textContent = '+';
+        btn.title = k === 0 ? 'Add to start'
+                  : k === colors.length ? 'Add to end'
+                  : 'Insert here';
+        btn.style.left = `${(k / colors.length) * 100}%`;
+        if (k === 0) btn.style.transform = 'translate(0, -50%)';
+        else if (k === colors.length) btn.style.transform = 'translate(-100%, -50%)';
+        btn.onclick = () => insertAt(k);
+        paletteEl.appendChild(btn);
+      }
+    }
+
+    syncHash();
+  }
+
+  // ---------- Copy / toast ----------
+  let toastTimer = null;
+  function copy(text, label) {
+    if (navigator.clipboard) navigator.clipboard.writeText(text).catch(()=>{});
+    showToast(label || `Copied ${text}`);
+  }
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
+  }
+
+  // ---------- URL hash sync ----------
+  let suppressHashLoad = false;
+  function syncHash() {
+    const hex = colors.map(c => hslToHex(c.h,c.s,c.l).slice(1)).join('-');
+    const locked = colors.map(c => c.locked ? '1':'0').join('');
+    const params = `p=${hex}&m=${mode}&l=${locked}`;
+    suppressHashLoad = true;
+    try { window.history.replaceState(null, '', '#' + params); } catch {}
+    setTimeout(() => suppressHashLoad = false, 0);
+  }
+  function loadFromHash() {
+    const h = window.location.hash;
+    if (!h || h.length < 2) return false;
+    const params = new URLSearchParams(h.slice(1));
+    const p = params.get('p');
+    if (!p) return false;
+    const hexes = p.split('-').filter(Boolean);
+    if (hexes.length < MIN_COUNT || hexes.length > MAX_COUNT) return false;
+    const locked = params.get('l') || '';
+    const m = params.get('m');
+    const parsed = hexes.map(hx => hexToHsl(hx)).filter(Boolean);
+    if (parsed.length !== hexes.length) return false;
+    if (m) mode = m;
+    colors = parsed.map((c, i) => ({ ...c, locked: locked[i] === '1' }));
+    document.querySelectorAll('#harmony button').forEach(x =>
+      x.classList.toggle('active', x.dataset.mode === mode));
+    return true;
+  }
+
+  // ---------- Saved palettes ----------
+  const SAVED_KEY = 'paletteforge:saved';
+  function getSaved() {
+    try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); }
+    catch { return []; }
+  }
+  function setSaved(list) {
+    try { localStorage.setItem(SAVED_KEY, JSON.stringify(list)); } catch {}
+  }
+  function saveCurrent() {
+    const list = getSaved();
+    const hex = colors.map(c => hslToHex(c.h,c.s,c.l));
+    // dedupe: same colors in same order = no-op
+    const exists = list.find(p =>
+      p.colors.length === hex.length && p.colors.every((c, i) => c === hex[i]));
+    if (exists) { showToast('Already saved'); return; }
+    list.unshift({ colors: hex, mode, savedAt: Date.now() });
+    if (list.length > 30) list.pop();
+    setSaved(list);
+    showToast('Saved to library');
+    renderSaved();
+  }
+  function loadSaved(idx) {
+    const list = getSaved();
+    const p = list[idx];
+    if (!p) return;
+    const parsed = p.colors.map(h => hexToHsl(h)).filter(Boolean);
+    if (!parsed.length) return;
+    colors = parsed.map(c => ({...c, locked: false}));
+    mode = p.mode || 'auto';
+    document.querySelectorAll('#harmony button').forEach(x =>
+      x.classList.toggle('active', x.dataset.mode === mode));
+    pushHistory();
+    render();
+    libOverlay.classList.remove('show');
+  }
+  function deleteSaved(idx) {
+    const list = getSaved();
+    list.splice(idx, 1);
+    setSaved(list);
+    renderSaved();
+  }
+  function relativeTime(ts) {
+    const d = (Date.now() - ts) / 1000;
+    if (d < 60) return 'just now';
+    if (d < 3600) return Math.floor(d/60) + 'm ago';
+    if (d < 86400) return Math.floor(d/3600) + 'h ago';
+    return Math.floor(d/86400) + 'd ago';
+  }
+  function renderSaved() {
+    const list = getSaved();
+    const wrap = document.getElementById('savedList');
+    if (!list.length) {
+      wrap.innerHTML = '<div class="saved-empty">No saved palettes yet.<br>Hit the ★ button to save your favorites.</div>';
+      return;
+    }
+    wrap.innerHTML = list.map((p, i) => `
+      <div class="saved-row">
+        <div class="strip" data-load="${i}">
+          ${p.colors.map(h => `<div style="background:${h}"></div>`).join('')}
+        </div>
+        <div class="meta">${relativeTime(p.savedAt)}</div>
+        <button class="del" data-del="${i}" title="Delete">✕</button>
+      </div>
+    `).join('');
+  }
+
+  // ---------- Export ----------
+  const exportOverlay = document.getElementById('exportOverlay');
+  const libOverlay = document.getElementById('libOverlay');
+  const codeBox = document.getElementById('codeBox');
+  let fmt = 'hex';
+
+  function exportText() {
+    const data = colors.map(c => {
+      const [r,g,b] = hslToRgb(c.h,c.s,c.l);
+      return { hex: rgbToHex(r,g,b).toUpperCase(), r,g,b, h:c.h, s:c.s, l:c.l };
+    });
+    switch(fmt) {
+      case 'hex': return data.map(d => d.hex).join('\n');
+      case 'rgb': return data.map(d => `rgb(${d.r}, ${d.g}, ${d.b})`).join('\n');
+      case 'hsl': return data.map(d => `hsl(${d.h}, ${d.s}%, ${d.l}%)`).join('\n');
+      case 'css':
+        return ':root {\n' + data.map((d,i) => `  --color-${i+1}: ${d.hex};`).join('\n') + '\n}';
+      case 'scss':
+        return data.map((d,i) => `$color-${i+1}: ${d.hex};`).join('\n');
+      case 'tailwind':
+        return 'colors: {\n' + data.map((d,i) => `  'brand-${(i+1)*100}': '${d.hex}',`).join('\n') + '\n}';
+      case 'json':
+        return JSON.stringify(data.map(d => ({
+          hex: d.hex,
+          rgb: { r: d.r, g: d.g, b: d.b },
+          hsl: { h: d.h, s: d.s, l: d.l }
+        })), null, 2);
+      case 'contrast': {
+        const lums = data.map(d => luminance(d.r, d.g, d.b));
+        const header = '         ' + data.map(d => d.hex).join('  ');
+        const rows = data.map((d, i) => {
+          const cells = data.map((_, j) => {
+            const r = contrastRatio(lums[i], lums[j]).toFixed(2).padStart(5,' ');
+            return r;
+          }).join('   ');
+          return `${d.hex}  ${cells}`;
+        });
+        return header + '\n' + rows.join('\n') +
+          '\n\nWCAG: 4.5+ = AA body · 7+ = AAA body · 3+ = AA large';
+      }
+    }
+  }
+  function refreshExport() { codeBox.textContent = exportText(); }
+
+  document.getElementById('exportBtn').onclick = () => { refreshExport(); exportOverlay.classList.add('show'); };
+  document.getElementById('closeExport').onclick = () => exportOverlay.classList.remove('show');
+  exportOverlay.onclick = e => { if (e.target === exportOverlay) exportOverlay.classList.remove('show'); };
+  document.getElementById('copyCode').onclick = () => copy(exportText(), 'Copied to clipboard');
+  document.getElementById('fmtTabs').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    fmt = b.dataset.fmt;
+    document.querySelectorAll('#fmtTabs button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    refreshExport();
+  });
+
+  // Image downloads
+  function buildSVG(w = 200, h = 240) {
+    const parts = colors.map((c, i) => {
+      const hex = hslToHex(c.h,c.s,c.l);
+      const [r,g,b] = hslToRgb(c.h,c.s,c.l);
+      const txt = textColorFor(r,g,b);
+      const x = i * w;
+      return `  <rect x="${x}" y="0" width="${w}" height="${h}" fill="${hex}"/>
+  <text x="${x + w/2}" y="${h - 24}" text-anchor="middle" font-family="JetBrains Mono, monospace"
+        font-size="14" font-weight="600" fill="${txt}">${hex.toUpperCase()}</text>`;
+    }).join('\n');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w*colors.length}" height="${h}" viewBox="0 0 ${w*colors.length} ${h}">
+${parts}
+</svg>`;
+  }
+  function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  }
+  document.getElementById('dlSvg').onclick = () => {
+    const svg = buildSVG();
+    downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), 'palette.svg');
+    showToast('SVG downloaded');
+  };
+  document.getElementById('dlPng').onclick = () => {
+    const W = 240, H = 280;
+    const canvas = document.createElement('canvas');
+    canvas.width = W * colors.length; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    colors.forEach((c, i) => {
+      const [r,g,b] = hslToRgb(c.h,c.s,c.l);
+      const hex = rgbToHex(r,g,b);
+      const txt = textColorFor(r,g,b);
+      ctx.fillStyle = hex;
+      ctx.fillRect(i*W, 0, W, H);
+      ctx.fillStyle = txt;
+      ctx.font = '600 16px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(hex.toUpperCase(), i*W + W/2, H - 28);
+    });
+    canvas.toBlob(blob => {
+      downloadBlob(blob, 'palette.png');
+      showToast('PNG downloaded');
+    });
+  };
+
+  // Library modal
+  document.getElementById('libBtn').onclick = () => { renderSaved(); libOverlay.classList.add('show'); };
+  document.getElementById('closeLib').onclick = () => libOverlay.classList.remove('show');
+  libOverlay.onclick = e => { if (e.target === libOverlay) libOverlay.classList.remove('show'); };
+  document.getElementById('savedList').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) { deleteSaved(+del.dataset.del); return; }
+    const load = e.target.closest('[data-load]');
+    if (load) loadSaved(+load.dataset.load);
+  });
+  document.getElementById('saveBtn').onclick = saveCurrent;
+
+  // ---------- Harmony + generate ----------
+  document.getElementById('harmony').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    mode = b.dataset.mode;
+    document.querySelectorAll('#harmony button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    generate();
+  });
+  document.getElementById('genBtn').onclick = generate;
+
+  // ---------- Keyboard ----------
+  window.addEventListener('keydown', e => {
+    if (exportOverlay.classList.contains('show') || libOverlay.classList.contains('show')) return;
+    if (e.target && /^(INPUT|TEXTAREA)$/i.test(e.target.tagName)) return;
+
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) { e.preventDefault(); undo(); return; }
+    if ((ctrl && (e.key === 'y' || e.key === 'Y')) || (ctrl && e.shiftKey && (e.key === 'z' || e.key === 'Z'))) {
+      e.preventDefault(); redo(); return;
+    }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); undo(); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); redo(); return; }
+
+    if (e.code === 'Space') { e.preventDefault(); generate(); return; }
+    if ((e.key === 'l' || e.key === 'L') && hoveredIdx >= 0) { e.preventDefault(); toggleLock(hoveredIdx); return; }
+    if ((e.key === 'c' || e.key === 'C') && hoveredIdx >= 0) {
+      e.preventDefault();
+      const c = colors[hoveredIdx];
+      copy(hslToHex(c.h,c.s,c.l).toUpperCase());
+      return;
+    }
+  });
+
+  // Hash change (browser back/forward)
+  window.addEventListener('hashchange', () => {
+    if (suppressHashLoad) return;
+    if (loadFromHash()) { pushHistory(); render(); }
+  });
+
+  // ---------- Init ----------
+  if (!loadFromHash()) {
+    // seed with 5 placeholders so generate() picks count=5
+    colors = new Array(5).fill(null).map(() => ({ h: 0, s: 0, l: 50, locked: false }));
+    generate();
+  } else {
+    pushHistory();
+    render();
+  }
+</script>
+</body>
+</html>
