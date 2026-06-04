@@ -152,7 +152,7 @@
     </div>
     <div class="status" id="status"></div>
     <div id="audioSlot"></div>
-    <p class="note">Tip: "Play" previews instantly. "Download" records this tab's audio while it speaks, so the saved WAV uses the same voice you previewed. When prompted, share <b>this tab</b> and tick <b>"Share tab audio"</b>. Use Chrome or Edge on desktop for best results.</p>
+    <p class="note">Tip: "Play" previews instantly. "Download" records the audio while it speaks, so the saved WAV uses the same voice you previewed. When the share prompt appears, pick <b>Entire Screen</b> (or the window) and tick <b>"Share system audio"</b> — speech audio usually bypasses "tab audio", so screen + system audio is the reliable choice. Chrome or Edge on desktop.</p>
   </div>
 </div>
 
@@ -241,9 +241,7 @@
   async function recordSpeechAsWav() {
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
-      audio: true,
-      preferCurrentTab: true,
-      selfBrowserSurface: 'include'
+      audio: true
     });
 
     const audioTracks = stream.getAudioTracks();
@@ -289,7 +287,21 @@
     const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
     audioCtx.close();
 
+    if (audioBufferLooksSilent(audioBuffer)) {
+      throw new Error('Recording was silent. Try again and pick "Entire Screen" with "Share system audio" ticked — speech audio is not always included in tab audio.');
+    }
+
     return audioBufferToWav(audioBuffer);
+  }
+
+  function audioBufferLooksSilent(buffer, threshold = 0.003) {
+    for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+      const data = buffer.getChannelData(ch);
+      for (let i = 0; i < data.length; i += 64) {
+        if (Math.abs(data[i]) > threshold) return false;
+      }
+    }
+    return true;
   }
 
   function audioBufferToWav(buffer) {
@@ -344,7 +356,7 @@
     recBtn.disabled = true;
     playBtn.disabled = true;
     status.className = 'status rec';
-    status.textContent = '● Share this tab (with audio) to record...';
+    status.textContent = '● Pick Entire Screen + "Share system audio" to record...';
 
     try {
       const wavBlob = await recordSpeechAsWav();
