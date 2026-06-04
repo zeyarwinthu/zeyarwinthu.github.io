@@ -205,11 +205,39 @@
   const pairsEl = document.getElementById('pairs');
   const timeEl = document.getElementById('time');
   const overlay = document.getElementById('overlay');
+  const STORAGE_KEY = 'memory-match-progress';
 
   let gridSize = 4;
-  let cards = [], first = null, second = null, lock = false;
+  let cards = [], deck = [], first = null, second = null, lock = false;
   let moves = 0, matched = 0, totalPairs = 8;
   let timer = null, seconds = 0, started = false;
+
+  function loadProgress() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      return null;
+    }
+  }
+
+  function saveProgress() {
+    const matchedIndices = cards.reduce((acc, card, idx) => card.classList.contains('matched') ? acc.concat(idx) : acc, []);
+    const flippedIndices = cards.reduce((acc, card, idx) => card.classList.contains('flipped') ? acc.concat(idx) : acc, []);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      gridSize,
+      deck,
+      matchedIndices,
+      flippedIndices,
+      moves,
+      matched,
+      seconds,
+      started
+    }));
+  }
+
+  function clearProgress() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
 
   function shuffle(a) {
     for (let i = a.length - 1; i > 0; i--) {
@@ -230,7 +258,11 @@
     timer = setInterval(() => { seconds++; timeEl.textContent = fmtTime(seconds); }, 1000);
   }
 
-  function init() {
+  function setModeButtons() {
+    document.querySelectorAll('[data-size]').forEach(x => x.classList.toggle('active', Number(x.dataset.size) === gridSize));
+  }
+
+  function init(loadSaved = true) {
     clearInterval(timer);
     seconds = 0; moves = 0; matched = 0; started = false;
     first = second = null; lock = false;
@@ -241,8 +273,26 @@
     overlay.classList.remove('show');
 
     board.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-    const chosen = shuffle([...ICONS]).slice(0, totalPairs - (gridSize === 5 ? 1 : 0));
-    const deck = gridSize === 5 ? shuffle([...chosen, ...chosen, WILDCARD]) : shuffle([...chosen, ...chosen]);
+    let saved = null;
+    if (loadSaved) saved = loadProgress();
+
+    if (saved && saved.gridSize === gridSize && Array.isArray(saved.deck) && saved.deck.length === gridSize * gridSize) {
+      deck = saved.deck;
+      matched = saved.matched || 0;
+      moves = saved.moves || 0;
+      seconds = saved.seconds || 0;
+      started = saved.started || false;
+      movesEl.textContent = moves;
+      pairsEl.textContent = `${matched}/${totalPairs}`;
+      if (started) {
+        timeEl.textContent = fmtTime(seconds);
+        timer = setInterval(() => { seconds++; timeEl.textContent = fmtTime(seconds); saveProgress(); }, 1000);
+      }
+    } else {
+      clearProgress();
+      const chosen = shuffle([...ICONS]).slice(0, totalPairs - (gridSize === 5 ? 1 : 0));
+      deck = gridSize === 5 ? shuffle([...chosen, ...chosen, WILDCARD]) : shuffle([...chosen, ...chosen]);
+    }
 
     board.innerHTML = '';
     cards = deck.map((icon, idx) => {
@@ -255,12 +305,30 @@
       board.appendChild(card);
       return card;
     });
+
+    if (saved && Array.isArray(saved.matchedIndices)) {
+      saved.matchedIndices.forEach(i => cards[i]?.classList.add('matched'));
+    }
+    if (saved && Array.isArray(saved.flippedIndices)) {
+      saved.flippedIndices.forEach(i => cards[i]?.classList.add('flipped'));
+      if (saved.flippedIndices.length === 2) {
+        first = cards[saved.flippedIndices[0]] || null;
+        second = cards[saved.flippedIndices[1]] || null;
+      } else if (saved.flippedIndices.length === 1) {
+        first = cards[saved.flippedIndices[0]] || null;
+      }
+      lock = !!second;
+    }
+
+    if (!loadSaved) saveProgress();
+    setModeButtons();
   }
 
   function flip(card) {
     if (lock || card === first || card.classList.contains('matched')) return;
     startTimer();
     card.classList.add('flipped');
+    saveProgress();
 
     if (!first) { first = card; return; }
     second = card;
@@ -275,6 +343,7 @@
         second.classList.add('matched');
         matched++;
         pairsEl.textContent = `${matched}/${totalPairs}`;
+        saveProgress();
         reset();
         if (matched === totalPairs) win();
       }, 350);
@@ -282,6 +351,7 @@
       setTimeout(() => {
         first.classList.remove('flipped');
         second.classList.remove('flipped');
+        saveProgress();
         reset();
       }, 850);
     }
@@ -296,14 +366,14 @@
     setTimeout(() => overlay.classList.add('show'), 500);
   }
 
-  document.getElementById('restart').onclick = init;
-  document.getElementById('playAgain').onclick = init;
+  document.getElementById('restart').onclick = () => init(false);
+  document.getElementById('playAgain').onclick = () => init(false);
   document.querySelectorAll('[data-size]').forEach(b => {
     b.onclick = () => {
       document.querySelectorAll('[data-size]').forEach(x => x.classList.remove('active'));
       b.classList.add('active');
       gridSize = Number(b.dataset.size);
-      init();
+      init(false);
     };
   });
 

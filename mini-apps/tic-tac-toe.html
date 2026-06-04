@@ -197,8 +197,45 @@
  
   const boardEl = document.getElementById('board');
   const statusEl = document.getElementById('status');
+  const STORAGE_KEY = 'tic-tac-toe-progress';
   const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
  
+  function loadGame() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      return null;
+    }
+  }
+
+  function saveGame() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      board,
+      gameOver,
+      difficulty,
+      scores,
+      statusText: statusEl.textContent,
+      statusColor: statusEl.style.color
+    }));
+  }
+
+  function clearSavedGame() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function restoreGame() {
+    const saved = loadGame();
+    if (!saved || !Array.isArray(saved.board) || saved.board.length !== 9) return;
+    board = saved.board;
+    gameOver = saved.gameOver || false;
+    difficulty = saved.difficulty || difficulty;
+    Object.assign(scores, saved.scores || scores);
+    if (saved.statusText) statusEl.textContent = saved.statusText;
+    if (saved.statusColor) statusEl.style.color = saved.statusColor;
+  }
+
+  restoreGame();
+
   function render() {
     boardEl.innerHTML = '';
     board.forEach((v, i) => {
@@ -210,6 +247,7 @@
       btn.dataset.i = i;
       boardEl.appendChild(btn);
     });
+    saveGame();
   }
  
   function move(i) {
@@ -285,6 +323,7 @@
       if (w === HUMAN) { scores.you++; statusEl.textContent = 'You win! 🎉'; statusEl.style.color = 'var(--x)'; showModal('🎉', 'You win!', 'Nicely played.'); }
       else { scores.ai++; statusEl.textContent = 'AI wins.'; statusEl.style.color = 'var(--o)'; showModal('🤖', 'AI wins', 'The machine takes this one.'); }
       updateScores();
+      saveGame();
       return true;
     }
     if (board.every(c => c)) {
@@ -294,6 +333,7 @@
       statusEl.style.color = 'var(--muted)';
       showModal('🤝', 'Draw', 'Nobody blinked.');
       updateScores();
+      saveGame();
       return true;
     }
     return false;
@@ -311,6 +351,7 @@
     gameOver = false;
     statusEl.textContent = "Your move — you're X";
     statusEl.style.color = 'var(--ink)';
+    clearSavedGame();
     render();
   }
  
