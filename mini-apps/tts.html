@@ -203,14 +203,23 @@
     loadVoices();
     if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
     if (window.meSpeak) {
-      meSpeak.loadConfig('https://cdn.jsdelivr.net/npm/mespeak@1.2.0/mespeak_config.json');
-      meSpeak.loadVoice('https://cdn.jsdelivr.net/npm/mespeak@1.2.0/voices/en/en-us.json', () => {
-        meSpeakReady = true;
-        recBtn.disabled = false;
-        recBtn.textContent = '⬇ Download';
-        status.className = 'status done';
-        status.textContent = 'Direct download ready.';
-      });
+      try {
+        const configLoaded = meSpeak.loadConfig('https://cdn.jsdelivr.net/npm/mespeak@1.2.0/mespeak_config.json');
+        const voiceLoaded = meSpeak.loadVoice('https://cdn.jsdelivr.net/npm/mespeak@1.2.0/voices/en/en-us.json');
+        if (configLoaded && voiceLoaded) {
+          meSpeakReady = true;
+          recBtn.disabled = false;
+          recBtn.textContent = '⬇ Download';
+          status.className = 'status done';
+          status.textContent = 'Direct download ready.';
+        } else {
+          status.className = 'status';
+          status.textContent = '⚠ Direct download is unavailable because the TTS engine failed to initialize.';
+        }
+      } catch (err) {
+        status.className = 'status';
+        status.textContent = '⚠ Direct download is unavailable because the TTS engine failed to initialize.';
+      }
     } else {
       status.className = 'status';
       status.textContent = '⚠ Direct download is unavailable because the TTS engine failed to load.';
