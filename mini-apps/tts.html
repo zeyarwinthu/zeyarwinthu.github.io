@@ -193,6 +193,41 @@
     });
     if (!voices.length) status.textContent = 'No voices found in this browser.';
   }
+  async function initMeSpeak() {
+    if (!window.meSpeak) return false;
+    const configUrl = 'https://cdn.jsdelivr.net/npm/mespeak@1.2.0/mespeak_config.json';
+    const voiceUrl = 'https://cdn.jsdelivr.net/npm/mespeak@1.2.0/voices/en/en-us.json';
+
+    let configLoaded = false;
+    try {
+      configLoaded = meSpeak.loadConfig(configUrl);
+      if (!configLoaded) {
+        const res = await fetch(configUrl);
+        if (!res.ok) return false;
+        const configJson = await res.json();
+        configLoaded = meSpeak.loadConfig(configJson);
+      }
+    } catch {
+      configLoaded = false;
+    }
+    if (!configLoaded) return false;
+
+    let voiceLoaded = false;
+    try {
+      voiceLoaded = meSpeak.loadVoice(voiceUrl);
+      if (!voiceLoaded) {
+        const res = await fetch(voiceUrl);
+        if (!res.ok) return false;
+        const voiceJson = await res.json();
+        voiceLoaded = meSpeak.loadVoice(voiceJson);
+      }
+    } catch {
+      voiceLoaded = false;
+    }
+
+    return voiceLoaded;
+  }
+
   if (!ttsSupported) {
     status.className = 'status';
     status.innerHTML = '⚠ This browser has no text-to-speech. Open this file in <b>Chrome</b> or <b>Safari</b> (not an in-app browser). On the Claude app: tap ⋮ → "Open in browser".';
@@ -202,28 +237,18 @@
   } else {
     loadVoices();
     if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
-    if (window.meSpeak) {
-      try {
-        const configLoaded = meSpeak.loadConfig('https://cdn.jsdelivr.net/npm/mespeak@1.2.0/mespeak_config.json');
-        const voiceLoaded = meSpeak.loadVoice('https://cdn.jsdelivr.net/npm/mespeak@1.2.0/voices/en/en-us.json');
-        if (configLoaded && voiceLoaded) {
-          meSpeakReady = true;
-          recBtn.disabled = false;
-          recBtn.textContent = '⬇ Download';
-          status.className = 'status done';
-          status.textContent = 'Direct download ready.';
-        } else {
-          status.className = 'status';
-          status.textContent = '⚠ Direct download is unavailable because the TTS engine failed to initialize.';
-        }
-      } catch (err) {
+    initMeSpeak().then(success => {
+      if (success) {
+        meSpeakReady = true;
+        recBtn.disabled = false;
+        recBtn.textContent = '⬇ Download';
+        status.className = 'status done';
+        status.textContent = 'Direct download ready.';
+      } else {
         status.className = 'status';
         status.textContent = '⚠ Direct download is unavailable because the TTS engine failed to initialize.';
       }
-    } else {
-      status.className = 'status';
-      status.textContent = '⚠ Direct download is unavailable because the TTS engine failed to load.';
-    }
+    });
   }
 
   rate.oninput = () => rateVal.textContent = parseFloat(rate.value).toFixed(2).replace(/0$/,'') + 'x';
