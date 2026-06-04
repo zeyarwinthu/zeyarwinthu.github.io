@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/mespeak@1.2.0/mespeak.min.js"></script>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -153,7 +152,7 @@
     </div>
     <div class="status" id="status"></div>
     <div id="audioSlot"></div>
-    <p class="note">Tip: "Play" previews instantly. "Download" generates a WAV file directly in the browser so you can save it immediately. For best compatibility, use Chrome or Edge on desktop.</p>
+    <p class="note">Tip: "Play" previews instantly. "Download" records this tab's audio while it speaks, so the saved WAV uses the same voice you previewed. When prompted, share <b>this tab</b> and tick <b>"Share tab audio"</b>. Use Chrome or Edge on desktop for best results.</p>
   </div>
 </div>
 
@@ -173,7 +172,9 @@
   const audioSlot = document.getElementById('audioSlot');
 
   let voices = [];
-  let meSpeakReady = false;
+  const captureSupported =
+    !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) &&
+    typeof window.MediaRecorder !== 'undefined';
 
   function loadVoices() {
     if (!ttsSupported) return;
@@ -193,41 +194,6 @@
     });
     if (!voices.length) status.textContent = 'No voices found in this browser.';
   }
-  async function initMeSpeak() {
-    if (!window.meSpeak) return false;
-    const configUrl = 'https://cdn.jsdelivr.net/npm/mespeak@1.2.0/mespeak_config.json';
-    const voiceUrl = 'https://cdn.jsdelivr.net/npm/mespeak@1.2.0/voices/en/en-us.json';
-
-    let configLoaded = false;
-    try {
-      configLoaded = meSpeak.loadConfig(configUrl);
-      if (!configLoaded) {
-        const res = await fetch(configUrl);
-        if (!res.ok) return false;
-        const configJson = await res.json();
-        configLoaded = meSpeak.loadConfig(configJson);
-      }
-    } catch {
-      configLoaded = false;
-    }
-    if (!configLoaded) return false;
-
-    let voiceLoaded = false;
-    try {
-      voiceLoaded = meSpeak.loadVoice(voiceUrl);
-      if (!voiceLoaded) {
-        const res = await fetch(voiceUrl);
-        if (!res.ok) return false;
-        const voiceJson = await res.json();
-        voiceLoaded = meSpeak.loadVoice(voiceJson);
-      }
-    } catch {
-      voiceLoaded = false;
-    }
-
-    return voiceLoaded;
-  }
-
   if (!ttsSupported) {
     status.className = 'status';
     status.innerHTML = '⚠ This browser has no text-to-speech. Open this file in <b>Chrome</b> or <b>Safari</b> (not an in-app browser). On the Claude app: tap ⋮ → "Open in browser".';
@@ -237,18 +203,13 @@
   } else {
     loadVoices();
     if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
-    initMeSpeak().then(success => {
-      if (success) {
-        meSpeakReady = true;
-        recBtn.disabled = false;
-        recBtn.textContent = '⬇ Download';
-        status.className = 'status done';
-        status.textContent = 'Direct download ready.';
-      } else {
-        status.className = 'status';
-        status.textContent = '⚠ Direct download is unavailable because the TTS engine failed to initialize.';
-      }
-    });
+    if (captureSupported) {
+      recBtn.disabled = false;
+    } else {
+      recBtn.disabled = true;
+      status.className = 'status';
+      status.textContent = '⚠ Download not supported here. Use Chrome or Edge on desktop.';
+    }
   }
 
   rate.oninput = () => rateVal.textContent = parseFloat(rate.value).toFixed(2).replace(/0$/,'') + 'x';
@@ -274,48 +235,142 @@
 
   stopBtn.onclick = () => { synth.cancel(); status.className = 'status'; status.textContent = ''; };
 
-  // Recording: capture system speech via getDisplayMedia OR fallback approach
-  // We use an AudioContext + MediaRecorder by routing speechSynthesis through
-  // a captured audio stream. SpeechSynthesis output cannot be captured directly,
-  // so we use getDisplayMedia with audio to record the tab's audio.
-  recBtn.onclick = () => {
-    if (!textEl.value.trim()) { status.textContent = 'Enter some text first.'; return; }
-    if (!meSpeakReady) {
-      status.className = 'status';
-      status.textContent = '⚠ Direct download is not ready yet. Please wait a moment and try again.';
-      return;
-    }
-
-    status.className = 'status rec';
-    status.textContent = '● Generating audio...';
-    const dataUrl = meSpeak.speak(textEl.value, {
-      rawdata: 'data-url',
-      amplitude: 100,
-      wordgap: 0,
-      pitch: Math.round(parseFloat(pitch.value) * 100),
-      speed: Math.round(parseFloat(rate.value) * 100),
-      variant: 'f2'
+  // SpeechSynthesis output can't be captured directly, so we ask the user to
+  // share THIS tab's audio via getDisplayMedia, record while we speak, then
+  // decode and re-encode as a WAV file.
+  async function recordSpeechAsWav() {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+      audio: true,
+      preferCurrentTab: true,
+      selfBrowserSurface: 'include'
     });
 
-    if (!dataUrl) {
+    const audioTracks = stream.getAudioTracks();
+    stream.getVideoTracks().forEach(t => t.stop());
+    if (!audioTracks.length) {
+      throw new Error('No audio was shared. Tick "Share tab audio" in the picker.');
+    }
+
+    const audioStream = new MediaStream(audioTracks);
+    const mimeType =
+      MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
+      : '';
+    if (!mimeType) {
+      audioTracks.forEach(t => t.stop());
+      throw new Error('No supported recording format in this browser.');
+    }
+
+    const recorder = new MediaRecorder(audioStream, { mimeType });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+    const recordedBlob = await new Promise((resolve, reject) => {
+      recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+      recorder.onerror = e => reject(e.error || new Error('Recorder error'));
+
+      recorder.start();
+      synth.cancel();
+      const u = makeUtterance();
+      u.onend = () => setTimeout(() => { if (recorder.state !== 'inactive') recorder.stop(); }, 350);
+      u.onerror = ev => {
+        try { if (recorder.state !== 'inactive') recorder.stop(); } catch {}
+        reject(new Error('Speech failed: ' + (ev.error || 'unknown')));
+      };
+      synth.speak(u);
+    });
+
+    audioTracks.forEach(t => t.stop());
+
+    const arrayBuffer = await recordedBlob.arrayBuffer();
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new Ctx();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    audioCtx.close();
+
+    return audioBufferToWav(audioBuffer);
+  }
+
+  function audioBufferToWav(buffer) {
+    const numChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const samples = buffer.length;
+    const byteLength = samples * numChannels * 2;
+    const ab = new ArrayBuffer(44 + byteLength);
+    const view = new DataView(ab);
+
+    const writeStr = (offset, str) => {
+      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    };
+
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + byteLength, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numChannels * 2, true);
+    view.setUint16(32, numChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, byteLength, true);
+
+    const channels = [];
+    for (let ch = 0; ch < numChannels; ch++) channels.push(buffer.getChannelData(ch));
+
+    let offset = 44;
+    for (let i = 0; i < samples; i++) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        let s = Math.max(-1, Math.min(1, channels[ch][i]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        offset += 2;
+      }
+    }
+
+    return new Blob([ab], { type: 'audio/wav' });
+  }
+
+  recBtn.onclick = async () => {
+    if (!textEl.value.trim()) { status.textContent = 'Enter some text first.'; return; }
+    if (!captureSupported) {
       status.className = 'status';
-      status.textContent = '⚠ Failed to generate audio.';
+      status.textContent = '⚠ Download not supported in this browser.';
       return;
     }
 
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = 'voiceforge.wav';
-    a.click();
+    recBtn.disabled = true;
+    playBtn.disabled = true;
+    status.className = 'status rec';
+    status.textContent = '● Share this tab (with audio) to record...';
 
-    audioSlot.innerHTML = '';
-    const audio = document.createElement('audio');
-    audio.controls = true;
-    audio.src = dataUrl;
-    audioSlot.appendChild(audio);
+    try {
+      const wavBlob = await recordSpeechAsWav();
+      const url = URL.createObjectURL(wavBlob);
 
-    status.className = 'status done';
-    status.textContent = '✓ Download started. You can replay the file below.';
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'voiceforge.wav';
+      a.click();
+
+      audioSlot.innerHTML = '';
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = url;
+      audioSlot.appendChild(audio);
+
+      status.className = 'status done';
+      status.textContent = '✓ Download started. You can replay the file below.';
+    } catch (err) {
+      status.className = 'status';
+      const msg = err && err.message ? err.message : 'Recording was cancelled.';
+      status.textContent = '⚠ ' + msg;
+    } finally {
+      recBtn.disabled = false;
+      playBtn.disabled = false;
+    }
   };
 </script>
 </body>
