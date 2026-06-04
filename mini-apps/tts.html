@@ -251,11 +251,21 @@
 
       const audioStream = new MediaStream(audioTracks);
       const chunks = [];
-      const recorder = new MediaRecorder(audioStream);
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : '';
+      const recorder = mimeType ? new MediaRecorder(audioStream, { mimeType }) : new MediaRecorder(audioStream);
       recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
       recorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop());
-        const blob = new Blob(chunks, { type: 'audio/webm' });
+        if (!chunks.length) {
+          status.className = 'status';
+          status.textContent = '⚠ Recording failed, no audio data was captured.';
+          return;
+        }
+        const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
         const url = URL.createObjectURL(blob);
         audioSlot.innerHTML = '';
         const audio = document.createElement('audio');
@@ -269,9 +279,10 @@
       };
 
       recorder.start();
+      await new Promise(resolve => setTimeout(resolve, 150));
       const u = makeUtterance();
       status.className = 'status rec'; status.textContent = '● Recording... speaking now';
-      u.onend = () => setTimeout(() => recorder.stop(), 400);
+      u.onend = () => setTimeout(() => recorder.stop(), 600);
       synth.cancel();
       synth.speak(u);
     } catch (err) {
