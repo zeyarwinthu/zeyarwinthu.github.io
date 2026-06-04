@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Match</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #10131a;
+    --card-back: #1c2230;
+    --card-back2: #232b3d;
+    --card-face: #f4f1ea;
+    --ink: #eef1f7;
+    --muted: #6c7588;
+    --accent: #ff5c8a;
+    --gold: #ffd166;
+    --match: #5ee0a8;
+    --edge: #2a3142;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background:
+      radial-gradient(circle at 15% 10%, rgba(255,92,138,0.12), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(94,224,168,0.1), transparent 40%),
+      var(--bg);
+    color: var(--ink);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+    gap: 22px;
+  }
+  header { text-align: center; }
+  h1 {
+    font-weight: 900;
+    font-size: clamp(2rem, 7vw, 3.2rem);
+    letter-spacing: -0.03em;
+    background: linear-gradient(120deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sub { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 6px; }
+
+  .hud {
+    display: flex;
+    gap: 14px;
+    font-family: 'DM Mono', monospace;
+  }
+  .stat {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    padding: 10px 18px;
+    text-align: center;
+    min-width: 84px;
+  }
+  .stat .label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .stat .val { font-size: 1.4rem; font-weight: 500; margin-top: 2px; }
+
+  .board {
+    display: grid;
+    gap: 10px;
+    width: min(92vw, 460px);
+    perspective: 1000px;
+  }
+
+  .card {
+    aspect-ratio: 1;
+    position: relative;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(.2,.8,.3,1.2);
+  }
+  .card.flipped, .card.matched { transform: rotateY(180deg); }
+  .card.matched { cursor: default; }
+  .face {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    backface-visibility: hidden;
+    display: grid;
+    place-items: center;
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    user-select: none;
+  }
+  .back {
+    background: linear-gradient(145deg, var(--card-back2), var(--card-back));
+    border: 1px solid var(--edge);
+    color: var(--muted);
+    font-size: 1.4rem;
+  }
+  .back::after { content: "?"; opacity: 0.4; font-weight: 700; }
+  .front {
+    background: var(--card-face);
+    transform: rotateY(180deg);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+  }
+  .card.matched .front {
+    box-shadow: inset 0 0 0 2px var(--match), 0 0 22px -4px var(--match);
+    animation: pulse 0.5s ease;
+  }
+  .card.wildcard .front {
+    background: linear-gradient(145deg, #fff6d7, #ffd166);
+    color: #2a3142;
+    font-weight: 900;
+  }
+  @keyframes pulse { 50% { transform: rotateY(180deg) scale(1.07); } }
+
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--edge);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.active { border-color: var(--gold); color: var(--gold); }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(8,10,16,0.8);
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 20;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: linear-gradient(160deg, #1d2230, #161a24);
+    border: 1px solid var(--edge);
+    border-radius: 22px;
+    padding: 40px 34px;
+    text-align: center;
+    width: min(84vw, 340px);
+    transform: scale(0.85) translateY(10px);
+    transition: transform 0.35s cubic-bezier(.2,1.4,.4,1);
+  }
+  .overlay.show .modal { transform: scale(1) translateY(0); }
+  .modal .emoji { font-size: 3.4rem; }
+  .modal h2 {
+    font-weight: 900; font-size: 2rem; margin: 10px 0 4px;
+    background: linear-gradient(120deg, var(--accent), var(--gold));
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .modal .result { font-family: 'DM Mono', monospace; color: var(--muted); font-size: 0.85rem; margin-bottom: 24px; line-height: 1.7; }
+  .modal .result b { color: var(--ink); }
+  .modal button {
+    background: linear-gradient(120deg, var(--accent), #ff7eaa);
+    color: #fff; border: none; border-radius: 12px;
+    padding: 14px 30px; font-family: 'Outfit', sans-serif; font-weight: 700;
+    font-size: 0.95rem; cursor: pointer; transition: transform 0.12s;
+  }
+  .modal button:hover { transform: translateY(-2px); }
+
+  @keyframes dealIn { from { opacity: 0; transform: translateY(16px) scale(0.9); } to { opacity: 1; transform: none; } }
+  .card { animation: dealIn 0.35s backwards; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Memory Match</h1>
+    <div class="sub">Flip · Remember · Pair</div>
+  </header>
+
+  <div class="hud">
+    <div class="stat"><div class="label">Moves</div><div class="val" id="moves">0</div></div>
+    <div class="stat"><div class="label">Pairs</div><div class="val" id="pairs">0/8</div></div>
+    <div class="stat"><div class="label">Time</div><div class="val" id="time">0:00</div></div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="controls">
+    <button class="btn" id="restart">↻ Restart</button>
+    <button class="btn active" data-size="4">Easy · 4×4</button>
+    <button class="btn" data-size="5">Medium · 5×5</button>
+    <button class="btn" data-size="6">Hard · 6×6</button>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="emoji">🏆</div>
+      <h2>You won!</h2>
+      <div class="result" id="result"></div>
+      <button id="playAgain">Play Again</button>
+    </div>
+  </div>
+
+<script>
+  const ICONS = ['🦊','🐼','🦉','🐙','🦋','🐢','🦜','🐝','🦄','🐳','🐸','🦔','🦩','🐲','🦚','🐌','🦒','🐧'];
+  const WILDCARD = '✨';
+
+  const board = document.getElementById('board');
+  const movesEl = document.getElementById('moves');
+  const pairsEl = document.getElementById('pairs');
+  const timeEl = document.getElementById('time');
+  const overlay = document.getElementById('overlay');
+
+  let gridSize = 4;
+  let cards = [], first = null, second = null, lock = false;
+  let moves = 0, matched = 0, totalPairs = 8;
+  let timer = null, seconds = 0, started = false;
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function fmtTime(s) {
+    const m = Math.floor(s / 60);
+    return `${m}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function startTimer() {
+    if (started) return;
+    started = true;
+    timer = setInterval(() => { seconds++; timeEl.textContent = fmtTime(seconds); }, 1000);
+  }
+
+  function init() {
+    clearInterval(timer);
+    seconds = 0; moves = 0; matched = 0; started = false;
+    first = second = null; lock = false;
+    timeEl.textContent = '0:00';
+    movesEl.textContent = '0';
+    totalPairs = gridSize === 5 ? 13 : (gridSize * gridSize) / 2;
+    pairsEl.textContent = `0/${totalPairs}`;
+    overlay.classList.remove('show');
+
+    board.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+    const chosen = shuffle([...ICONS]).slice(0, totalPairs - (gridSize === 5 ? 1 : 0));
+    const deck = gridSize === 5 ? shuffle([...chosen, ...chosen, WILDCARD]) : shuffle([...chosen, ...chosen]);
+
+    board.innerHTML = '';
+    cards = deck.map((icon, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card' + (icon === WILDCARD ? ' wildcard' : '');
+      card.style.animationDelay = (idx * 0.025) + 's';
+      card.innerHTML = `<div class="face back"></div><div class="face front">${icon}</div>`;
+      card.dataset.icon = icon;
+      card.onclick = () => flip(card);
+      board.appendChild(card);
+      return card;
+    });
+  }
+
+  function flip(card) {
+    if (lock || card === first || card.classList.contains('matched')) return;
+    startTimer();
+    card.classList.add('flipped');
+
+    if (!first) { first = card; return; }
+    second = card;
+    lock = true;
+    moves++;
+    movesEl.textContent = moves;
+
+    const match = first.dataset.icon === second.dataset.icon || first.dataset.icon === WILDCARD || second.dataset.icon === WILDCARD;
+    if (match) {
+      setTimeout(() => {
+        first.classList.add('matched');
+        second.classList.add('matched');
+        matched++;
+        pairsEl.textContent = `${matched}/${totalPairs}`;
+        reset();
+        if (matched === totalPairs) win();
+      }, 350);
+    } else {
+      setTimeout(() => {
+        first.classList.remove('flipped');
+        second.classList.remove('flipped');
+        reset();
+      }, 850);
+    }
+  }
+
+  function reset() { first = second = null; lock = false; }
+
+  function win() {
+    clearInterval(timer);
+    document.getElementById('result').innerHTML =
+      `Cleared in <b>${moves} moves</b><br>Time: <b>${fmtTime(seconds)}</b>`;
+    setTimeout(() => overlay.classList.add('show'), 500);
+  }
+
+  document.getElementById('restart').onclick = init;
+  document.getElementById('playAgain').onclick = init;
+  document.querySelectorAll('[data-size]').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('[data-size]').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      gridSize = Number(b.dataset.size);
+      init();
+    };
+  });
+
+  init();
+</script>
+</body>
+</html>
