@@ -279,12 +279,13 @@
       };
 
       recorder.start();
-      await new Promise(resolve => setTimeout(resolve, 150));
       const u = makeUtterance();
       status.className = 'status rec'; status.textContent = '● Recording... speaking now';
       u.onend = () => setTimeout(() => recorder.stop(), 600);
-      synth.cancel();
-      synth.speak(u);
+      recorder.onstart = () => {
+        synth.cancel();
+        synth.speak(u);
+      };
     } catch (err) {
       status.className = 'status';
       status.textContent = '⚠ Capture cancelled or not supported in this browser.';
