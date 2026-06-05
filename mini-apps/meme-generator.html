@@ -13,7 +13,10 @@
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
     background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif;
-    min-height: 100vh; display: flex; flex-direction: column;
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  @media (max-width: 820px) {
+    body { height: auto; min-height: 100vh; overflow: auto; }
   }
   .topbar {
     display: flex; align-items: center; gap: 12px; padding: 14px 20px;
@@ -180,7 +183,7 @@
 </head>
 <body>
   <div class="topbar">
-    <div class="logo">Meme<span>Forge</span></div>
+    <div class="logo">Meme</div>
     <div class="pill" id="capCounter">2 captions</div>
   </div>
 

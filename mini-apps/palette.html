@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Palette Forge</title>
+<title>Palette</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -184,7 +184,7 @@
 </head>
 <body>
   <div class="topbar">
-    <div class="logo">Palette<span>Forge</span></div>
+    <div class="logo">Palette</div>
     <div class="harmony" id="harmony">
       <button data-mode="auto" class="active">Auto</button>
       <button data-mode="analogous">Analogous</button>
@@ -637,7 +637,7 @@
   }
 
   // ---------- Saved palettes ----------
-  const SAVED_KEY = 'paletteforge:saved';
+  const SAVED_KEY = 'freepalette:saved';
   function getSaved() {
     try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); }
     catch { return []; }
