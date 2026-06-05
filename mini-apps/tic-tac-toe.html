@@ -39,14 +39,14 @@
   }
   h1 span { color: var(--x); font-style: italic; }
   .sub { color: var(--muted); font-size: 0.8rem; margin-top: 8px; letter-spacing: 0.15em; text-transform: uppercase; }
- 
+
   .status {
     font-size: 1.05rem;
     letter-spacing: 0.05em;
     min-height: 1.4em;
     transition: color 0.3s;
   }
- 
+
   .board {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -80,7 +80,7 @@
   .cell.win { background: rgba(245,196,81,0.12); color: var(--win); }
   @keyframes pop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
   .cell .mark { display: inline-block; animation: pop 0.25s ease-out; }
- 
+
   .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
   button.btn {
     background: var(--panel);
@@ -96,18 +96,44 @@
   }
   button.btn:hover { border-color: var(--x); background: #1d242e; }
   button.btn.active { border-color: var(--o); color: var(--o); }
- 
+
+  .mode-switch {
+    display: inline-flex;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .mode-switch button {
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .mode-switch button:hover { color: var(--ink); }
+  .mode-switch button.active {
+    background: var(--line);
+    color: var(--ink);
+  }
+
   .scoreboard {
     display: flex;
     gap: 28px;
     font-size: 0.85rem;
   }
-  .score { text-align: center; }
+  .score { text-align: center; min-width: 60px; }
   .score .label { color: var(--muted); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; }
   .score .val { font-family: 'Fraunces', serif; font-weight: 900; font-size: 1.8rem; }
-  .score.you .val { color: var(--x); }
-  .score.ai .val { color: var(--o); }
- 
+  .score.left .val { color: var(--x); }
+  .score.right .val { color: var(--o); }
+
   .overlay {
     position: fixed;
     inset: 0;
@@ -161,24 +187,28 @@
 <body>
   <header>
     <h1>TIC<span>·</span>TAC<span>·</span>TOE</h1>
-    <div class="sub">You vs. the machine</div>
+    <div class="sub" id="subtitle">You vs. the machine</div>
   </header>
- 
-  <div class="status" id="status">Your move — you're X</div>
- 
-  <div class="board" id="board"></div>
- 
-  <div class="scoreboard">
-    <div class="score you"><div class="label">You</div><div class="val" id="sYou">0</div></div>
-    <div class="score draw"><div class="label">Draw</div><div class="val" id="sDraw">0</div></div>
-    <div class="score ai"><div class="label">AI</div><div class="val" id="sAI">0</div></div>
+
+  <div class="mode-switch" id="modeSwitch">
+    <button data-mode="ai" class="active">Vs AI</button>
+    <button data-mode="pvp">2 Players</button>
   </div>
- 
+
+  <div class="status" id="status">Your move — you're X</div>
+
+  <div class="board" id="board"></div>
+
+  <div class="scoreboard">
+    <div class="score left"><div class="label" id="lblLeft">You</div><div class="val" id="sLeft">0</div></div>
+    <div class="score draw"><div class="label">Draw</div><div class="val" id="sDraw">0</div></div>
+    <div class="score right"><div class="label" id="lblRight">AI</div><div class="val" id="sRight">0</div></div>
+  </div>
+
   <div class="controls">
     <button class="btn" id="reset">New Round</button>
-    <button class="btn active" data-diff="hard">Unbeatable</button>
   </div>
- 
+
   <div class="overlay" id="overlay">
     <div class="modal">
       <div class="emoji" id="mEmoji">🎉</div>
@@ -187,19 +217,24 @@
       <button id="mPlay">Play Again</button>
     </div>
   </div>
- 
+
 <script>
-  const HUMAN = 'X', AI = 'O';
+  const X = 'X', O = 'O';
+  const HUMAN = X, AI = O;
   let board = Array(9).fill('');
   let gameOver = false;
-  let difficulty = 'hard';
-  const scores = { you: 0, draw: 0, ai: 0 };
- 
+  let mode = 'ai';          // 'ai' or 'pvp'
+  let currentPlayer = X;    // used in pvp mode
+  const scores = { left: 0, draw: 0, right: 0 };
+
   const boardEl = document.getElementById('board');
   const statusEl = document.getElementById('status');
+  const subtitleEl = document.getElementById('subtitle');
+  const lblLeftEl = document.getElementById('lblLeft');
+  const lblRightEl = document.getElementById('lblRight');
   const STORAGE_KEY = 'tic-tac-toe-progress';
   const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
- 
+
   function loadGame() {
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -212,7 +247,8 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       board,
       gameOver,
-      difficulty,
+      mode,
+      currentPlayer,
       scores,
       statusText: statusEl.textContent,
       statusColor: statusEl.style.color
@@ -228,13 +264,34 @@
     if (!saved || !Array.isArray(saved.board) || saved.board.length !== 9) return;
     board = saved.board;
     gameOver = saved.gameOver || false;
-    difficulty = saved.difficulty || difficulty;
+    mode = saved.mode || 'ai';
+    currentPlayer = saved.currentPlayer || X;
     Object.assign(scores, saved.scores || scores);
     if (saved.statusText) statusEl.textContent = saved.statusText;
     if (saved.statusColor) statusEl.style.color = saved.statusColor;
   }
 
   restoreGame();
+
+  function applyModeUI() {
+    document.querySelectorAll('#modeSwitch button').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    if (mode === 'ai') {
+      subtitleEl.textContent = 'You vs. the machine';
+      lblLeftEl.textContent = 'You';
+      lblRightEl.textContent = 'AI';
+    } else {
+      subtitleEl.textContent = 'Two-player duel';
+      lblLeftEl.textContent = 'Player X';
+      lblRightEl.textContent = 'Player O';
+    }
+  }
+
+  function defaultStatus() {
+    if (mode === 'ai') return "Your move — you're X";
+    return currentPlayer === X ? "Player X's turn" : "Player O's turn";
+  }
 
   function render() {
     boardEl.innerHTML = '';
@@ -249,24 +306,34 @@
     });
     saveGame();
   }
- 
+
   function move(i) {
     if (board[i] || gameOver) return;
-    board[i] = HUMAN;
-    render();
-    if (checkEnd()) return;
-    statusEl.textContent = 'Thinking…';
-    setTimeout(aiMove, 350);
+    if (mode === 'ai') {
+      board[i] = HUMAN;
+      render();
+      if (checkEnd()) return;
+      statusEl.textContent = 'Thinking…';
+      setTimeout(aiMove, 350);
+    } else {
+      board[i] = currentPlayer;
+      currentPlayer = currentPlayer === X ? O : X;
+      render();
+      if (checkEnd()) return;
+      statusEl.textContent = currentPlayer === X ? "Player X's turn" : "Player O's turn";
+      statusEl.style.color = currentPlayer === X ? 'var(--x)' : 'var(--o)';
+    }
   }
- 
+
   function aiMove() {
     const i = bestMove();
     board[i] = AI;
     render();
     if (checkEnd()) return;
     statusEl.textContent = "Your move — you're X";
+    statusEl.style.color = 'var(--ink)';
   }
- 
+
   function bestMove() {
     let best = -Infinity, idx = 0;
     board.forEach((v, i) => {
@@ -279,13 +346,13 @@
     });
     return idx;
   }
- 
+
   function minimax(b, depth, isMax) {
     const w = winner(b);
     if (w === AI) return 10 - depth;
     if (w === HUMAN) return depth - 10;
     if (b.every(c => c)) return 0;
- 
+
     if (isMax) {
       let best = -Infinity;
       for (let i = 0; i < 9; i++) if (!b[i]) { b[i]=AI; best=Math.max(best,minimax(b,depth+1,false)); b[i]=''; }
@@ -296,32 +363,55 @@
       return best;
     }
   }
- 
+
   function winner(b) {
     for (const [a,c,d] of wins) if (b[a] && b[a]===b[c] && b[a]===b[d]) return b[a];
     return null;
   }
- 
+
   function winningLine(b) {
     for (const line of wins) { const [a,c,d]=line; if (b[a] && b[a]===b[c] && b[a]===b[d]) return line; }
     return null;
   }
- 
+
   function showModal(emoji, title, sub) {
     document.getElementById('mEmoji').textContent = emoji;
     document.getElementById('mTitle').textContent = title;
     document.getElementById('mSub').textContent = sub;
     setTimeout(() => document.getElementById('overlay').classList.add('show'), 600);
   }
- 
+
   function checkEnd() {
     const w = winner(board);
     if (w) {
       gameOver = true;
       const line = winningLine(board);
       [...boardEl.children].forEach(c => { if (line.includes(+c.dataset.i)) c.classList.add('win'); });
-      if (w === HUMAN) { scores.you++; statusEl.textContent = 'You win! 🎉'; statusEl.style.color = 'var(--x)'; showModal('🎉', 'You win!', 'Nicely played.'); }
-      else { scores.ai++; statusEl.textContent = 'AI wins.'; statusEl.style.color = 'var(--o)'; showModal('🤖', 'AI wins', 'The machine takes this one.'); }
+      if (mode === 'ai') {
+        if (w === HUMAN) {
+          scores.left++;
+          statusEl.textContent = 'You win! 🎉';
+          statusEl.style.color = 'var(--x)';
+          showModal('🎉', 'You win!', 'Nicely played.');
+        } else {
+          scores.right++;
+          statusEl.textContent = 'AI wins.';
+          statusEl.style.color = 'var(--o)';
+          showModal('🤖', 'AI wins', 'The machine takes this one.');
+        }
+      } else {
+        if (w === X) {
+          scores.left++;
+          statusEl.textContent = 'Player X wins! 🎉';
+          statusEl.style.color = 'var(--x)';
+          showModal('❌', 'Player X wins!', 'Hand the device to Player O.');
+        } else {
+          scores.right++;
+          statusEl.textContent = 'Player O wins! 🎉';
+          statusEl.style.color = 'var(--o)';
+          showModal('⭕', 'Player O wins!', 'Hand the device to Player X.');
+        }
+      }
       updateScores();
       saveGame();
       return true;
@@ -338,36 +428,44 @@
     }
     return false;
   }
- 
+
   function updateScores() {
-    document.getElementById('sYou').textContent = scores.you;
+    document.getElementById('sLeft').textContent = scores.left;
     document.getElementById('sDraw').textContent = scores.draw;
-    document.getElementById('sAI').textContent = scores.ai;
+    document.getElementById('sRight').textContent = scores.right;
   }
- 
+
   function reset() {
     document.getElementById('overlay').classList.remove('show');
     board = Array(9).fill('');
     gameOver = false;
-    statusEl.textContent = "Your move — you're X";
-    statusEl.style.color = 'var(--ink)';
+    currentPlayer = X;
+    statusEl.textContent = defaultStatus();
+    statusEl.style.color = mode === 'pvp' ? 'var(--x)' : 'var(--ink)';
     clearSavedGame();
     render();
   }
- 
+
+  function setMode(newMode) {
+    if (newMode === mode) return;
+    mode = newMode;
+    scores.left = 0;
+    scores.draw = 0;
+    scores.right = 0;
+    updateScores();
+    applyModeUI();
+    reset();
+  }
+
   document.getElementById('reset').onclick = reset;
   document.getElementById('mPlay').onclick = reset;
-  document.querySelectorAll('[data-diff]').forEach(b => {
-    b.onclick = () => {
-      difficulty = b.dataset.diff;
-      document.querySelectorAll('[data-diff]').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      reset();
-    };
+  document.querySelectorAll('#modeSwitch button').forEach(b => {
+    b.onclick = () => setMode(b.dataset.mode);
   });
- 
+
+  applyModeUI();
+  updateScores();
   render();
 </script>
 </body>
 </html>
- 
