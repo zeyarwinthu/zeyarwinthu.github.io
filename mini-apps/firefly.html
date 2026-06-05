@@ -60,6 +60,19 @@
   .live-score.show { opacity: 1; }
 
   .hint { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; opacity: 0.55; }
+
+  .mute-btn {
+    position: absolute; top: 14px; right: 14px;
+    width: 38px; height: 38px; padding: 0;
+    background: rgba(20,10,38,0.6); backdrop-filter: blur(6px);
+    color: var(--ink); border: none; border-radius: 50%;
+    cursor: pointer; z-index: 4;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.12s, background 0.15s;
+  }
+  .mute-btn:hover { background: rgba(50,30,80,0.8); }
+  .mute-btn:active { transform: scale(0.9); }
+  .mute-btn svg { display: block; }
 </style>
 </head>
 <body>
@@ -68,6 +81,12 @@
   <div class="game-wrap">
     <canvas id="game"></canvas>
     <div class="live-score" id="liveScore">0</div>
+
+    <button class="mute-btn" id="muteBtn" aria-label="Toggle sound">
+      <svg id="muteIcon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zm-2.5-9v2.06a7 7 0 0 1 0 13.87V21a9 9 0 0 0 0-18z"/>
+      </svg>
+    </button>
 
     <div class="overlay" id="startOverlay">
       <h2>✨ Firefly</h2>
@@ -96,13 +115,19 @@
   // ---- Sizing (portrait playfield) ----
   let W, H;
   function size() {
-    const maxH = Math.min(window.innerHeight - 150, 640);
-    const maxW = Math.min(window.innerWidth - 32, 400);
-    // keep ~ 2:3 aspect
-    let h = maxH, w = h * 0.66;
-    if (w > maxW) { w = maxW; h = w / 0.66; }
-    W = canvas.width = Math.round(w);
-    H = canvas.height = Math.round(h);
+    const availH = window.innerHeight - 110;
+    const availW = window.innerWidth - 32;
+    if (availW > availH) {
+      // Landscape (desktop/laptop) — fill viewport
+      W = canvas.width = Math.round(availW);
+      H = canvas.height = Math.round(availH);
+    } else {
+      // Portrait (mobile) — keep 2:3 aspect
+      let h = availH, w = h * 0.66;
+      if (w > availW) { w = availW; h = w / 0.66; }
+      W = canvas.width = Math.round(w);
+      H = canvas.height = Math.round(h);
+    }
   }
   size();
   window.addEventListener('resize', () => { size(); if (state!=='play') drawStatic(); });
@@ -112,16 +137,17 @@
   function scaleConsts() {
     GRAV = H * 0.0011;
     FLAP = -H * 0.0125;
-    PIPE_W = W * 0.16;
+    PIPE_W = H * 0.105;
     GAP = H * 0.26;
-    SPEED = W * 0.006;
-    BIRD_R = W * 0.045;
+    SPEED = H * 0.004;
+    BIRD_R = H * 0.030;
   }
   scaleConsts();
 
   // ---- State ----
   let state = 'menu'; // menu | play | over
-  let bird, pipes, score, best = 0, frame, groundX = 0;
+  const BEST_KEY = 'firefly-best-score';
+  let bird, pipes, score, best = parseInt(localStorage.getItem(BEST_KEY), 10) || 0, frame, groundX = 0;
   let wingPhase = 0;
 
   function reset() {
@@ -133,7 +159,7 @@
     spawnPipe(W + 60);
     spawnPipe(W + 60 + pipeSpacing());
   }
-  function pipeSpacing() { return W * 0.62; }
+  function pipeSpacing() { return H * 0.42; }
 
   function spawnPipe(x) {
     const margin = H * 0.12;
@@ -142,9 +168,11 @@
   }
 
   function flap() {
+    initAudio();
     if (state === 'menu') { start(); return; }
     if (state === 'over') return;
     bird.v = FLAP;
+    playFlap();
   }
 
   // ---- Loop ----
@@ -168,6 +196,7 @@
       // score when bird passes pipe center
       if (!p.scored && p.x + PIPE_W < bird.x) {
         p.scored = true; score++; liveScore.textContent = score;
+        playScore();
       }
       // collision with pipe
       if (bird.x + BIRD_R > p.x && bird.x - BIRD_R < p.x + PIPE_W) {
@@ -250,11 +279,11 @@
     ctx.fillRect(x - w*0.35, Math.min(baseY, tipY), w*1.7, h);
     ctx.restore();
 
-    // Main column gradient: dark red base → bright yellow tip
+    // Main column gradient: fades from transparent base → bright yellow tip
     const grd = ctx.createLinearGradient(0, baseY, 0, tipY);
-    grd.addColorStop(0,    '#2a0202');
-    grd.addColorStop(0.25, '#8b1500');
-    grd.addColorStop(0.55, '#e23a08');
+    grd.addColorStop(0,    'rgba(42,2,2,0)');
+    grd.addColorStop(0.25, 'rgba(120,18,0,0.35)');
+    grd.addColorStop(0.55, 'rgba(226,58,8,0.95)');
     grd.addColorStop(0.82, '#ffa324');
     grd.addColorStop(1,    '#ffeb6b');
     ctx.fillStyle = grd;
@@ -327,34 +356,95 @@
     }
     ctx.fillStyle = '#8bc34a'; ctx.fillRect(0, gy, W, H*0.012);
   }
-  function drawBird() {
+  function drawFirefly() {
     ctx.save();
     ctx.translate(bird.x, bird.y);
     ctx.rotate(bird.rot);
-    // body
-    ctx.fillStyle = '#ffd54f';
-    ctx.beginPath(); ctx.ellipse(0,0,BIRD_R*1.15,BIRD_R,0,0,Math.PI*2); ctx.fill();
-    // belly
-    ctx.fillStyle = '#fff3c4';
-    ctx.beginPath(); ctx.ellipse(BIRD_R*0.1,BIRD_R*0.35,BIRD_R*0.7,BIRD_R*0.5,0,0,Math.PI*2); ctx.fill();
-    // wing (flaps)
-    const wing = Math.sin(wingPhase) * BIRD_R*0.4;
-    ctx.fillStyle = '#f5b942';
-    ctx.beginPath(); ctx.ellipse(-BIRD_R*0.25, wing, BIRD_R*0.6, BIRD_R*0.4, 0.4, 0, Math.PI*2); ctx.fill();
+    const r = BIRD_R;
+
+    // Pulsing outer glow halo behind the abdomen
+    const pulse = 0.85 + 0.15 * Math.sin(frame * 0.2);
+    const tailX = -r * 0.85;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const halo = ctx.createRadialGradient(tailX, 0, 0, tailX, 0, r * 3.2 * pulse);
+    halo.addColorStop(0, 'rgba(235,255,140,0.75)');
+    halo.addColorStop(0.45, 'rgba(200,255,90,0.28)');
+    halo.addColorStop(1, 'rgba(150,255,40,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(tailX, 0, r * 3.2 * pulse, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
+    // Body (dark, segmented oval)
+    ctx.fillStyle = '#2a1d12';
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 1.1, r * 0.55, 0, 0, Math.PI * 2); ctx.fill();
+    // segment stripes
+    ctx.fillStyle = '#150d05';
+    ctx.beginPath(); ctx.ellipse(-r * 0.25, 0, r * 0.07, r * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-r * 0.55, 0, r * 0.07, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+
+    // Head (small dome on the right)
+    ctx.fillStyle = '#1a1108';
+    ctx.beginPath(); ctx.ellipse(r * 0.85, 0, r * 0.4, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
     // eye
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(BIRD_R*0.55,-BIRD_R*0.35,BIRD_R*0.34,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(BIRD_R*0.66,-BIRD_R*0.35,BIRD_R*0.16,0,Math.PI*2); ctx.fill();
-    // beak
-    ctx.fillStyle = '#ff9800';
-    ctx.beginPath(); ctx.moveTo(BIRD_R*1.0,-BIRD_R*0.1); ctx.lineTo(BIRD_R*1.6,0); ctx.lineTo(BIRD_R*1.0,BIRD_R*0.25); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(r * 1.0, -r * 0.18, r * 0.12, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(r * 1.04, -r * 0.18, r * 0.06, 0, Math.PI * 2); ctx.fill();
+
+    // Antennae
+    ctx.strokeStyle = '#1a1108';
+    ctx.lineWidth = Math.max(1, r * 0.07);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(r * 1.05, -r * 0.32);
+    ctx.quadraticCurveTo(r * 1.35, -r * 0.75, r * 1.5, -r * 0.9);
+    ctx.moveTo(r * 1.15, -r * 0.22);
+    ctx.quadraticCurveTo(r * 1.5, -r * 0.55, r * 1.7, -r * 0.6);
+    ctx.stroke();
+    // antenna tips
+    ctx.fillStyle = '#1a1108';
+    ctx.beginPath(); ctx.arc(r * 1.5, -r * 0.9, r * 0.06, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(r * 1.7, -r * 0.6, r * 0.06, 0, Math.PI * 2); ctx.fill();
+
+    // Wings (translucent, fluttering)
+    const wingFlap = Math.sin(wingPhase) * 0.5;
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = '#eaf2ff';
+    // back wing
+    ctx.save();
+    ctx.translate(-r * 0.05, -r * 0.25);
+    ctx.rotate(0.15 + wingFlap * 0.6);
+    ctx.beginPath(); ctx.ellipse(0, -r * 0.4, r * 0.75, r * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // front wing
+    ctx.save();
+    ctx.translate(r * 0.15, -r * 0.3);
+    ctx.rotate(-0.2 + wingFlap * 0.5);
+    ctx.beginPath(); ctx.ellipse(0, -r * 0.4, r * 0.7, r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+
+    // Bright abdomen tip (light source)
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const tip = ctx.createRadialGradient(tailX, 0, 0, tailX, 0, r * 0.7);
+    tip.addColorStop(0, 'rgba(255,255,230,1)');
+    tip.addColorStop(0.4, 'rgba(225,255,130,0.9)');
+    tip.addColorStop(1, 'rgba(180,255,80,0)');
+    ctx.fillStyle = tip;
+    ctx.beginPath(); ctx.arc(tailX, 0, r * 0.7, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+
     ctx.restore();
   }
 
   function render() {
     drawBackground();
-    drawPipes();
+    drawFlames();
     drawGround();
-    drawBird();
+    drawFirefly();
   }
   function drawStatic() {
     reset();
@@ -372,6 +462,7 @@
 
   // ---- Flow ----
   function start() {
+    initAudio();
     reset();
     state = 'play';
     document.getElementById('startOverlay').classList.add('hidden');
@@ -381,13 +472,101 @@
   function gameOver() {
     if (state !== 'play') return;
     state = 'over';
-    if (score > best) best = score;
+    playHit();
+    if (score > best) { best = score; try { localStorage.setItem(BEST_KEY, best); } catch(e) {} }
     liveScore.classList.remove('show');
     document.getElementById('finalScore').textContent = score;
     document.getElementById('bestScore').textContent = best;
     // brief flash
     ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(0,0,W,H);
     setTimeout(() => document.getElementById('overOverlay').classList.remove('hidden'), 250);
+  }
+
+  // ---- Audio (calm ambient pad + soft SFX) ----
+  let audioCtx = null, masterGain = null, muted = false;
+  const AMBIENT_VOL = 0.22;
+
+  function initAudio() {
+    if (audioCtx) return;
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { return; }
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(audioCtx.destination);
+    startAmbient();
+    masterGain.gain.linearRampToValueAtTime(muted ? 0 : AMBIENT_VOL, audioCtx.currentTime + 2.5);
+  }
+
+  function startAmbient() {
+    scheduleTwinkles();
+  }
+
+  // Random soft "twinkle" chimes — C major pentatonic in upper octaves
+  const TWINKLE_NOTES = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66];
+  function scheduleTwinkles() {
+    const play = () => {
+      if (audioCtx && !muted) {
+        const t = audioCtx.currentTime;
+        const f = TWINKLE_NOTES[Math.floor(Math.random() * TWINKLE_NOTES.length)];
+        const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+        osc.type = 'sine'; osc.frequency.value = f;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.05, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+        osc.connect(g).connect(masterGain);
+        osc.start(t); osc.stop(t + 1.5);
+      }
+      setTimeout(play, 400 + Math.random() * 900);
+    };
+    setTimeout(play, 500);
+  }
+
+  function playFlap() {
+    if (!audioCtx || muted) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900, t);
+    osc.frequency.exponentialRampToValueAtTime(420, t + 0.09);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.06, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.15);
+  }
+
+  function playScore() {
+    if (!audioCtx || muted) return;
+    const t = audioCtx.currentTime;
+    [880, 1320].forEach((f, i) => {
+      const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.value = f;
+      g.gain.setValueAtTime(0, t + i*0.05);
+      g.gain.linearRampToValueAtTime(0.05, t + 0.01 + i*0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
+      osc.connect(g).connect(audioCtx.destination);
+      osc.start(t + i*0.05); osc.stop(t + 0.5);
+    });
+  }
+
+  function playHit() {
+    if (!audioCtx || muted) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(55, t + 0.4);
+    g.gain.setValueAtTime(0.14, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.5);
+  }
+
+  function toggleMute() {
+    muted = !muted;
+    if (!masterGain) return;
+    masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(muted ? 0 : AMBIENT_VOL, audioCtx.currentTime + 0.3);
   }
 
   // ---- Input ----
@@ -399,6 +578,15 @@
   });
   document.getElementById('startBtn').onclick = start;
   document.getElementById('retryBtn').onclick = start;
+
+  const ICON_ON  = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zm-2.5-9v2.06a7 7 0 0 1 0 13.87V21a9 9 0 0 0 0-18z"/>';
+  const ICON_OFF = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.17v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+  document.getElementById('muteBtn').onclick = (e) => {
+    e.stopPropagation();
+    initAudio();
+    toggleMute();
+    document.getElementById('muteIcon').innerHTML = muted ? ICON_OFF : ICON_ON;
+  };
 
   // init
   drawStatic();
