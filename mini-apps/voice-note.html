@@ -335,20 +335,45 @@
       livePreview.classList.toggle('active', !!interim || listening);
     };
 
+    recognition.onstart = () => {
+      console.log('[voice-note] recognition started, lang =', recognition.lang);
+    };
+
     recognition.onerror = e => {
+      console.warn('[voice-note] recognition error:', e.error, e);
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
         stopListening();
         toast('Microphone permission denied');
         micStatus.textContent = 'Mic blocked';
         micHint.textContent = 'Allow microphone access in your browser settings, then try again.';
       } else if (e.error === 'network') {
-        toast('Network needed for speech recognition');
+        toast('Network blocked — Chrome needs google.com for speech');
+        micHint.textContent = 'Speech recognition needs an internet connection to Google.';
+      } else if (e.error === 'audio-capture') {
+        stopListening();
+        toast('Mic unavailable — another app may be using it');
+        micStatus.textContent = 'Mic in use';
+        micHint.textContent = 'Close other apps using the microphone, then try again.';
+      } else if (e.error === 'language-not-supported') {
+        stopListening();
+        toast('Language not supported by this browser');
+      } else if (e.error === 'no-speech' || e.error === 'aborted') {
+        // expected — silence or user-stop; let onend handle restart
+      } else {
+        toast('Recognition error: ' + e.error);
       }
     };
 
     recognition.onend = () => {
+      console.log('[voice-note] recognition ended, listening =', listening);
       if (listening) {
-        try { recognition.start(); } catch(_) {}
+        // Small delay avoids InvalidStateError when restart races with stop
+        setTimeout(() => {
+          if (listening) {
+            try { recognition.start(); }
+            catch(err) { console.warn('[voice-note] restart failed:', err); }
+          }
+        }, 100);
       } else {
         livePreview.classList.remove('active');
         livePreview.textContent = '';
@@ -481,7 +506,8 @@
     if (!recognition) return;
     recognition.lang = langSelect.value;
     listening = true;
-    try { recognition.start(); } catch(_) {}
+    try { recognition.start(); }
+    catch(err) { console.warn('[voice-note] start failed:', err); }
     micBtn.classList.add('recording');
     micBtn.textContent = '⏹';
     micStatus.textContent = 'Listening…';
@@ -489,7 +515,9 @@
     micHint.textContent = 'Speak naturally. Say "period", "new line", etc.';
     livePreview.classList.add('active');
     startTimer();
-    startMeter();
+    // Delay meter so SpeechRecognition grabs the mic first. On some Windows
+    // setups getUserMedia + SpeechRecognition compete and the recognition loses.
+    setTimeout(() => { if (listening) startMeter(); }, 600);
   }
   function stopListening() {
     listening = false;
