@@ -215,8 +215,18 @@
     const cells = emptyCells();
     if (!cells.length) return null;
     const [r,c] = cells[Math.floor(Math.random()*cells.length)];
-    grid[r][c] = { value: Math.random() < 0.9 ? 2 : 4, id: tileId++, isNew: true };
+    grid[r][c] = { value: pickSpawnValue(), id: tileId++, isNew: true };
     return [r,c];
+  }
+
+  // Spawn value scales with current max tile: cap = maxTile / 4 (min 4).
+  // Picks a power of 2 in [2, cap] biased toward lower values.
+  function pickSpawnValue() {
+    const cap = Math.max(4, maxTile() / 4);
+    const maxExp = Math.log2(cap); // 2 -> 1, 4 -> 2, 8 -> 3, ...
+    // Geometric-ish bias: square the random so lower exponents are more likely.
+    const exp = 1 + Math.floor(Math.pow(Math.random(), 2) * maxExp);
+    return Math.pow(2, Math.min(exp, maxExp));
   }
 
   function fontSize(v) {
