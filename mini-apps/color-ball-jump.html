@@ -302,11 +302,10 @@
     e.preventDefault();
     if (state === 'menu') { start(); return; }
     const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const x = e.clientX - rect.left;
     rotate(x < rect.width/2 ? -1 : 1);
   }
-  canvas.addEventListener('mousedown', tap);
-  canvas.addEventListener('touchstart', tap, {passive:false});
+  canvas.addEventListener('pointerdown', tap);
   window.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft' || e.key === 'a') { e.preventDefault(); rotate(-1); }
     else if (e.key === 'ArrowRight' || e.key === 'd') { e.preventDefault(); rotate(1); }

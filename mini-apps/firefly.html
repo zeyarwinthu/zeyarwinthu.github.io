@@ -571,8 +571,7 @@
 
   // ---- Input ----
   function onTap(e) { e.preventDefault(); flap(); }
-  canvas.addEventListener('mousedown', onTap);
-  canvas.addEventListener('touchstart', onTap, {passive:false});
+  canvas.addEventListener('pointerdown', onTap);
   window.addEventListener('keydown', e => {
     if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); flap(); }
   });
