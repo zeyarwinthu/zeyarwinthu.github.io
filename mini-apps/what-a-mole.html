@@ -51,6 +51,7 @@
     transition: transform 0.08s;
   }
   .hole { aspect-ratio: 1; position: relative; }
+  .stage { position: absolute; inset: 0; overflow: hidden; border-radius: 8px; }
   .hole-back {
     position: absolute; bottom: 0; left: 0; right: 0; height: 62%;
     background: radial-gradient(ellipse at 50% 30%, var(--hole) 0%, var(--dirt2) 70%, var(--dirt) 100%);
@@ -195,11 +196,16 @@
   /* pause overlay (subtle) */
   .pause-veil {
     position: fixed; inset: 0; background: rgba(20,10,32,0.55); backdrop-filter: blur(3px);
-    display: flex; align-items: center; justify-content: center; z-index: 35;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    z-index: 35;
     color: var(--ink); font-size: 2.2rem; font-weight: 800; letter-spacing: 0.08em;
     opacity: 0; pointer-events: none; transition: opacity 0.2s;
   }
-  .pause-veil.show { opacity: 1; }
+  .pause-veil.show { opacity: 1; pointer-events: auto; cursor: pointer; }
+  .pause-veil .resume-hint {
+    font-size: 0.92rem; font-weight: 500; color: var(--muted);
+    letter-spacing: 0.06em; text-transform: lowercase;
+  }
 
   /* end-of-game overlay */
   .overlay {
@@ -222,6 +228,12 @@
     color: var(--good); font-weight: 700; display: block; margin-top: 6px;
     animation: pulse 0.6s infinite alternate;
   }
+  .modal-section { margin-bottom: 16px; }
+  .modal-label {
+    font-size: 0.66rem; color: var(--muted); margin-bottom: 8px;
+    letter-spacing: 0.18em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+  }
+  .modal .difficulty { justify-content: center; }
 </style>
 </head>
 <body>
@@ -256,13 +268,24 @@
   </div>
 
   <div class="countdown" id="countdown"></div>
-  <div class="pause-veil" id="pauseVeil">PAUSED</div>
+  <div class="pause-veil" id="pauseVeil">
+    <div>PAUSED</div>
+    <div class="resume-hint">click anywhere to resume</div>
+  </div>
 
   <div class="overlay" id="overlay">
     <div class="modal">
       <div class="emoji" id="ovEmoji">🏆</div>
       <h2 id="ovTitle">Time's Up!</h2>
       <div class="res" id="ovRes"></div>
+      <div class="modal-section">
+        <div class="modal-label">Difficulty</div>
+        <div class="difficulty">
+          <button class="diff-btn" data-d="easy">Easy</button>
+          <button class="diff-btn active" data-d="normal">Normal</button>
+          <button class="diff-btn" data-d="hard">Hard</button>
+        </div>
+      </div>
       <button class="btn" id="playAgain">Play Again</button>
     </div>
   </div>
@@ -354,8 +377,10 @@
     const hole = document.createElement('div');
     hole.className = 'hole';
     hole.dataset.i = i;
-    hole.innerHTML = `<div class="hole-back"></div>
-      <div class="mole"><div class="critter mole-c">${MOLE_HTML}</div></div>`;
+    hole.innerHTML = `<div class="stage">
+        <div class="hole-back"></div>
+        <div class="mole"><div class="critter mole-c">${MOLE_HTML}</div></div>
+      </div>`;
     hole.addEventListener('mousedown', () => whack(i));
     hole.addEventListener('touchstart', e => { e.preventDefault(); whack(i); }, {passive:false});
     board.appendChild(hole);
@@ -635,12 +660,17 @@
   document.querySelectorAll('.diff-btn').forEach(b => {
     b.onclick = () => {
       if (playing || starting) return;
-      document.querySelectorAll('.diff-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
       difficulty = b.dataset.d;
+      document.querySelectorAll('.diff-btn').forEach(x => {
+        x.classList.toggle('active', x.dataset.d === difficulty);
+      });
       timeLeft = DIFFS[difficulty].time;
       timeEl.textContent = timeLeft;
     };
+  });
+
+  pauseVeil.addEventListener('click', () => {
+    if (paused) togglePause();
   });
 
   document.addEventListener('keydown', e => {

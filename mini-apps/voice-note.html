@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1a; --bg2: #070a12; --panel: #131a28; --edge: #232d40;
+    --ink: #eaf0fa; --muted: #7888a3; --accent: #4ee0b5; --accent2: #6c8cff;
+    --rec: #ff5c6c; --interim: #8ea0bd;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    background: radial-gradient(circle at 50% -10%, #15203a 0%, var(--bg2) 60%);
+    color: var(--ink); font-family: 'Sora', sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 40px; gap: 20px;
+  }
+  header { text-align: center; }
+  h1 { font-weight: 800; font-size: clamp(1.7rem, 6vw, 2.4rem); letter-spacing: -0.02em; }
+  h1 .ic { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 0.82rem; margin-top: 6px; }
+
+  .app { width: min(720px, 100%); display: flex; flex-direction: column; gap: 14px; }
+
+  /* ---- Mic control ---- */
+  .mic-bar {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 18px;
+    padding: 18px; display: flex; align-items: center; gap: 16px;
+  }
+  .mic-btn {
+    width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0;
+    background: var(--accent); color: #042018; font-size: 1.7rem; display: grid; place-items: center;
+    transition: transform 0.12s, background 0.25s; position: relative;
+  }
+  .mic-btn:hover:not(:disabled) { transform: scale(1.05); }
+  .mic-btn.recording { background: var(--rec); color: #fff; }
+  .mic-btn.recording::before {
+    content: ''; position: absolute; inset: -6px; border-radius: 50%;
+    border: 2px solid var(--rec); animation: ripple 1.4s ease-out infinite;
+  }
+  @keyframes ripple { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.5); opacity: 0; } }
+  .mic-info { flex: 1; min-width: 0; }
+  .mic-row { display: flex; align-items: baseline; gap: 10px; }
+  .mic-status { font-weight: 600; font-size: 0.95rem; }
+  .mic-status.live { color: var(--rec); }
+  .mic-timer {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--rec);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .mic-timer.show { opacity: 1; }
+  .mic-hint { color: var(--muted); font-size: 0.76rem; margin-top: 3px; }
+  .mic-meter {
+    display: flex; gap: 3px; align-items: flex-end; height: 22px; margin-top: 8px;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .mic-meter.active { opacity: 1; }
+  .mic-meter span {
+    display: block; width: 4px; height: 4px;
+    background: linear-gradient(to top, var(--accent), var(--accent2));
+    border-radius: 2px; transition: height 0.08s linear;
+  }
+  .lang-select {
+    background: var(--bg2); border: 1px solid var(--edge); color: var(--ink);
+    border-radius: 9px; padding: 9px 11px; font-family: inherit; font-size: 0.8rem;
+    outline: none; cursor: pointer; max-width: 180px; text-overflow: ellipsis;
+  }
+  .lang-select:focus { border-color: var(--accent2); }
+
+  /* ---- Live transcript preview ---- */
+  .live-preview {
+    background: var(--bg2); border: 1px dashed var(--edge); border-radius: 12px;
+    padding: 12px 14px; min-height: 46px; font-size: 0.9rem; color: var(--interim);
+    font-style: italic; display: none;
+  }
+  .live-preview.active { display: block; }
+
+  /* ---- Title + notepad ---- */
+  .title-input {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 12px;
+    padding: 11px 16px; color: var(--ink); font-family: 'Sora', sans-serif;
+    font-size: 1.02rem; font-weight: 600; width: 100%; outline: none;
+    transition: border-color 0.15s;
+  }
+  .title-input:focus { border-color: var(--accent2); }
+  .title-input::placeholder { color: var(--muted); font-weight: 500; }
+
+  .notepad-wrap { position: relative; }
+  textarea {
+    width: 100%; min-height: 280px; background: var(--panel); border: 1px solid var(--edge);
+    border-radius: 16px; padding: 18px; color: var(--ink); font-family: 'Sora', sans-serif;
+    font-size: 1rem; line-height: 1.7; outline: none; resize: vertical;
+  }
+  textarea:focus { border-color: var(--accent2); }
+  textarea::placeholder { color: var(--muted); }
+
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .toolbar button {
+    background: var(--panel); border: 1px solid var(--edge); color: var(--ink);
+    padding: 9px 14px; border-radius: 10px; cursor: pointer; font-family: inherit;
+    font-size: 0.8rem; font-weight: 500; transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .toolbar button:hover { border-color: var(--accent2); }
+  .toolbar button.primary { background: var(--accent); border-color: var(--accent); color: #042018; font-weight: 600; }
+  .toolbar button.danger:hover { border-color: var(--rec); color: var(--rec); }
+  .toolbar .voice-select {
+    background: var(--panel); border: 1px solid var(--edge); color: var(--ink);
+    border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: 0.78rem;
+    outline: none; cursor: pointer; max-width: 170px;
+  }
+  .toolbar .stat {
+    margin-left: auto; align-self: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted);
+  }
+
+  /* ---- Commands legend ---- */
+  .commands {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 16px; padding: 16px 18px;
+  }
+  .commands h3 { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+  .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 8px; }
+  .cmd { display: flex; align-items: center; gap: 9px; font-size: 0.8rem; color: var(--muted); }
+  .cmd code {
+    background: var(--bg2); border: 1px solid var(--edge); border-radius: 6px; padding: 3px 8px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--ink); white-space: nowrap;
+  }
+
+  /* ---- Unsupported banner ---- */
+  .banner {
+    background: rgba(255,92,108,0.1); border: 1px solid rgba(255,92,108,0.3); border-radius: 14px;
+    padding: 16px 18px; font-size: 0.86rem; line-height: 1.6; color: #ffc2c8; display: none;
+  }
+  .banner.show { display: block; }
+  .banner b { color: #fff; }
+
+  /* ---- Library modal ---- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(7,10,18,0.85); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; z-index: 80;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s; padding: 20px;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 18px;
+    padding: 22px; width: min(94vw, 580px); max-height: 86vh; display: flex; flex-direction: column;
+    transform: scale(0.92); transition: transform 0.28s;
+  }
+  .overlay.show .modal { transform: scale(1); }
+  .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-shrink: 0; }
+  .modal-head h3 { font-size: 1.05rem; font-weight: 700; }
+  .modal-close {
+    background: transparent; border: none; color: var(--muted); font-size: 1rem;
+    cursor: pointer; padding: 4px 12px; border-radius: 6px;
+  }
+  .modal-close:hover { color: var(--ink); background: var(--bg2); }
+
+  .saved-list { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding-right: 4px; }
+  .saved-row {
+    display: flex; gap: 10px; align-items: center; padding: 11px 12px;
+    background: var(--bg2); border: 1px solid var(--edge); border-radius: 11px;
+    transition: border-color 0.15s;
+  }
+  .saved-row:hover { border-color: var(--accent2); }
+  .saved-main { flex: 1; min-width: 0; cursor: pointer; }
+  .saved-title { font-weight: 600; font-size: 0.92rem; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .saved-snippet {
+    font-size: 0.76rem; color: var(--muted); margin-top: 3px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .saved-date {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    color: var(--muted); margin-top: 5px; opacity: 0.8;
+  }
+  .saved-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .saved-actions button {
+    background: transparent; border: 1px solid var(--edge); color: var(--muted);
+    border-radius: 7px; padding: 6px 10px; cursor: pointer; font-size: 0.85rem; transition: all 0.15s;
+  }
+  .saved-load:hover { color: var(--accent); border-color: var(--accent); }
+  .saved-del:hover { color: var(--rec); border-color: var(--rec); }
+  .saved-empty {
+    color: var(--muted); font-size: 0.84rem; text-align: center; padding: 32px 10px; line-height: 1.7;
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: var(--bg); padding: 11px 22px; border-radius: 12px;
+    font-size: 0.84rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.25s; z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+  <header>
+    <h1><span class="ic">🎙</span> Voice Notes</h1>
+    <div class="sub">Speak and watch your words appear. Edit freely too.</div>
+  </header>
+
+  <div class="app">
+    <div class="banner" id="banner"></div>
+
+    <div class="mic-bar">
+      <button class="mic-btn" id="micBtn" title="Start / stop dictation">🎤</button>
+      <div class="mic-info">
+        <div class="mic-row">
+          <div class="mic-status" id="micStatus">Tap the mic to start</div>
+          <div class="mic-timer" id="micTimer">0:00</div>
+        </div>
+        <div class="mic-hint" id="micHint">Your speech becomes text in the note below.</div>
+        <div class="mic-meter" id="micMeter"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <select class="lang-select" id="langSelect" title="Recognition language">
+        <option value="en-US">English (US)</option>
+        <option value="en-GB">English (UK)</option>
+        <option value="es-ES">Español</option>
+        <option value="fr-FR">Français</option>
+        <option value="de-DE">Deutsch</option>
+        <option value="it-IT">Italiano</option>
+        <option value="pt-BR">Português</option>
+        <option value="hi-IN">हिन्दी</option>
+        <option value="ja-JP">日本語</option>
+        <option value="ko-KR">한국어</option>
+        <option value="zh-CN">中文</option>
+        <option value="my-MM">မြန်မာ</option>
+      </select>
+    </div>
+
+    <div class="live-preview" id="livePreview"></div>
+
+    <input class="title-input" id="titleInput" placeholder="Untitled note" maxlength="120" />
+
+    <div class="notepad-wrap">
+      <textarea id="notepad" placeholder="Your notes appear here. Start talking, or just type…"></textarea>
+    </div>
+
+    <div class="toolbar">
+      <button id="speakBtn">🔊 Read aloud</button>
+      <select id="voiceSelect" class="voice-select" title="Pick a voice"></select>
+      <button id="copyBtn">📋 Copy</button>
+      <button id="downloadBtn">↓ Download</button>
+      <button id="saveBtn" class="primary">★ Save</button>
+      <button id="libBtn">📚 Library</button>
+      <button id="clearBtn" class="danger">🗑 Clear</button>
+      <span class="stat" id="stats">0 words</span>
+    </div>
+
+    <div class="commands">
+      <h3>Voice Commands (say these while dictating)</h3>
+      <div class="cmd-grid">
+        <div class="cmd"><code>new line</code> line break</div>
+        <div class="cmd"><code>new paragraph</code> blank line</div>
+        <div class="cmd"><code>period / comma</code> punctuation</div>
+        <div class="cmd"><code>question mark</code> ?</div>
+        <div class="cmd"><code>delete that</code> remove last bit</div>
+        <div class="cmd"><code>clear notes</code> empty the page</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="libOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Saved Notes</h3>
+        <button class="modal-close" id="libClose">✕</button>
+      </div>
+      <div class="saved-list" id="savedList"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = document.getElementById('micBtn');
+  const micStatus = document.getElementById('micStatus');
+  const micHint = document.getElementById('micHint');
+  const micTimer = document.getElementById('micTimer');
+  const micMeter = document.getElementById('micMeter');
+  const notepad = document.getElementById('notepad');
+  const titleInput = document.getElementById('titleInput');
+  const livePreview = document.getElementById('livePreview');
+  const langSelect = document.getElementById('langSelect');
+  const voiceSelect = document.getElementById('voiceSelect');
+  const banner = document.getElementById('banner');
+  const libOverlay = document.getElementById('libOverlay');
+  const statsEl = document.getElementById('stats');
+
+  let recognition = null;
+  let listening = false;
+
+  // ---- Toast ----
+  let toastTimer = null;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+  }
+
+  // ---- Support check ----
+  if (!SR) {
+    banner.classList.add('show');
+    banner.innerHTML = `<b>Speech recognition isn't available in this browser.</b> The voice feature needs Chrome, Edge, Safari, or Samsung Internet (Firefox doesn't support it). You can still type, edit, and use "Read aloud" below.`;
+    micBtn.disabled = true;
+    micBtn.style.opacity = 0.5;
+    micBtn.style.cursor = 'not-allowed';
+    micStatus.textContent = 'Voice input unavailable';
+    micHint.textContent = 'Typing still works perfectly.';
+  } else {
+    setupRecognition();
+  }
+
+  function setupRecognition() {
+    recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = langSelect.value;
+
+    recognition.onresult = e => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          handleFinal(transcript);
+        } else {
+          interim += transcript;
+        }
+      }
+      livePreview.textContent = interim;
+      livePreview.classList.toggle('active', !!interim || listening);
+    };
+
+    recognition.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        stopListening();
+        toast('Microphone permission denied');
+        micStatus.textContent = 'Mic blocked';
+        micHint.textContent = 'Allow microphone access in your browser settings, then try again.';
+      } else if (e.error === 'network') {
+        toast('Network needed for speech recognition');
+      }
+    };
+
+    recognition.onend = () => {
+      if (listening) {
+        try { recognition.start(); } catch(_) {}
+      } else {
+        livePreview.classList.remove('active');
+        livePreview.textContent = '';
+      }
+    };
+  }
+
+  // ---- Cursor-aware insertion ----
+  function smartInsert(text) {
+    if (document.activeElement === notepad) {
+      const s = notepad.selectionStart, e = notepad.selectionEnd;
+      notepad.value = notepad.value.slice(0, s) + text + notepad.value.slice(e);
+      notepad.selectionStart = notepad.selectionEnd = s + text.length;
+    } else {
+      notepad.value += text;
+    }
+    updateCount();
+    autosave();
+    notepad.scrollTop = notepad.scrollHeight;
+  }
+
+  // ---- Apply final transcript (with voice commands) ----
+  function handleFinal(raw) {
+    let text = raw.trim();
+    if (!text) return;
+    const lower = text.toLowerCase();
+
+    if (lower === 'clear notes' || lower === 'clear all') {
+      notepad.value = ''; updateCount(); autosave(); toast('Cleared'); return;
+    }
+    if (lower === 'delete that' || lower === 'scratch that') { deleteLastChunk(); return; }
+    if (lower === 'new line' || lower === 'newline') { smartInsert('\n'); return; }
+    if (lower === 'new paragraph') { smartInsert('\n\n'); return; }
+
+    text = text
+      .replace(/\bnew paragraph\b/gi, '\n\n')
+      .replace(/\bnew line\b/gi, '\n')
+      .replace(/\bperiod\b/gi, '.')
+      .replace(/\bfull stop\b/gi, '.')
+      .replace(/\bcomma\b/gi, ',')
+      .replace(/\bquestion mark\b/gi, '?')
+      .replace(/\bexclamation (mark|point)\b/gi, '!')
+      .replace(/\bcolon\b/gi, ':')
+      .replace(/\bsemicolon\b/gi, ';')
+      .replace(/\bopen quote\b/gi, '"')
+      .replace(/\bclose quote\b/gi, '"')
+      .replace(/\bsmiley face\b/gi, ':)');
+
+    // Examine text around the insertion point for spacing/capitalization
+    const focused = document.activeElement === notepad;
+    const insertPos = focused ? notepad.selectionStart : notepad.value.length;
+    const before = notepad.value.slice(0, insertPos);
+
+    let prefix = '';
+    if (before && !/\s$/.test(before) && !/^[.,!?;:]/.test(text)) prefix = ' ';
+    if (!before.trim() || /[.!?]\s*$/.test(before)) {
+      text = text.charAt(0).toUpperCase() + text.slice(1);
+    }
+    let addition = (prefix + text).replace(/\s+([.,!?;:])/g, '$1');
+    smartInsert(addition);
+  }
+
+  function deleteLastChunk() {
+    let v = notepad.value.trimEnd();
+    const idx = Math.max(v.lastIndexOf('. '), v.lastIndexOf('\n'), v.lastIndexOf('? '), v.lastIndexOf('! '));
+    v = idx > 0 ? v.slice(0, idx+1) : '';
+    notepad.value = v;
+    updateCount();
+    autosave();
+    toast('Deleted last bit');
+  }
+
+  // ---- Mic level meter (Web Audio analyzer) ----
+  let audioCtx = null, analyser = null, micStream = null, meterRAF = null;
+  async function startMeter() {
+    if (!navigator.mediaDevices?.getUserMedia) return;
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = audioCtx.createMediaStreamSource(micStream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      analyser.smoothingTimeConstant = 0.7;
+      src.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const bars = micMeter.querySelectorAll('span');
+      micMeter.classList.add('active');
+      const step = Math.floor(data.length / bars.length);
+      function loop() {
+        analyser.getByteFrequencyData(data);
+        bars.forEach((bar, i) => {
+          let sum = 0;
+          for (let j = 0; j < step; j++) sum += data[i*step + j];
+          const v = Math.min(1, (sum / step) / 180);
+          bar.style.height = (4 + v * 18) + 'px';
+        });
+        meterRAF = requestAnimationFrame(loop);
+      }
+      loop();
+    } catch(_) { /* permission denied or unsupported — silent */ }
+  }
+  function stopMeter() {
+    cancelAnimationFrame(meterRAF); meterRAF = null;
+    if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
+    if (audioCtx) { try { audioCtx.close(); } catch(_) {} audioCtx = null; }
+    analyser = null;
+    micMeter.classList.remove('active');
+    micMeter.querySelectorAll('span').forEach(b => b.style.height = '4px');
+  }
+
+  // ---- Recording timer ----
+  let timerStart = 0, timerHandle = null;
+  function startTimer() {
+    timerStart = Date.now();
+    micTimer.textContent = '0:00';
+    micTimer.classList.add('show');
+    timerHandle = setInterval(() => {
+      const s = Math.floor((Date.now() - timerStart) / 1000);
+      const m = Math.floor(s / 60);
+      micTimer.textContent = `${m}:${String(s%60).padStart(2,'0')}`;
+    }, 500);
+  }
+  function stopTimer() {
+    clearInterval(timerHandle); timerHandle = null;
+    micTimer.classList.remove('show');
+  }
+
+  // ---- Start / stop ----
+  function startListening() {
+    if (!recognition) return;
+    recognition.lang = langSelect.value;
+    listening = true;
+    try { recognition.start(); } catch(_) {}
+    micBtn.classList.add('recording');
+    micBtn.textContent = '⏹';
+    micStatus.textContent = 'Listening…';
+    micStatus.classList.add('live');
+    micHint.textContent = 'Speak naturally. Say "period", "new line", etc.';
+    livePreview.classList.add('active');
+    startTimer();
+    startMeter();
+  }
+  function stopListening() {
+    listening = false;
+    if (recognition) { try { recognition.stop(); } catch(_) {} }
+    micBtn.classList.remove('recording');
+    micBtn.textContent = '🎤';
+    micStatus.textContent = 'Paused';
+    micStatus.classList.remove('live');
+    micHint.textContent = 'Tap the mic to resume dictation.';
+    livePreview.classList.remove('active');
+    livePreview.textContent = '';
+    stopTimer();
+    stopMeter();
+  }
+
+  micBtn.onclick = () => { listening ? stopListening() : startListening(); };
+  langSelect.onchange = () => {
+    if (recognition) recognition.lang = langSelect.value;
+    if (listening) { recognition.stop(); }
+    populateVoices();
+  };
+
+  // ---- Stats ----
+  function wordCount(s) { return s.trim() ? s.trim().split(/\s+/).length : 0; }
+  function updateCount() {
+    const text = notepad.value;
+    const w = wordCount(text);
+    const c = text.length;
+    const minutes = w > 0 ? Math.max(1, Math.round(w / 200)) : 0;
+    const parts = [`${w} word${w===1?'':'s'}`, `${c} char${c===1?'':'s'}`];
+    if (minutes > 0) parts.push(`~${minutes} min read`);
+    statsEl.textContent = parts.join(' · ');
+  }
+  notepad.addEventListener('input', () => { updateCount(); autosave(); });
+  titleInput.addEventListener('input', autosave);
+
+  // ---- Autosave (current draft) ----
+  const DRAFT_KEY = 'voicenote:draft';
+  let autosaveTimer = null;
+  function autosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          title: titleInput.value, body: notepad.value, updatedAt: Date.now()
+        }));
+      } catch(_) {}
+    }, 400);
+  }
+  function restoreDraft() {
+    try {
+      const j = localStorage.getItem(DRAFT_KEY);
+      if (!j) return;
+      const obj = JSON.parse(j);
+      if (typeof obj.title === 'string') titleInput.value = obj.title;
+      if (typeof obj.body === 'string')  notepad.value = obj.body;
+    } catch(_) {}
+  }
+
+  // ---- Saved-notes library ----
+  const LIB_KEY = 'voicenote:library';
+  function getSaved() {
+    try { return JSON.parse(localStorage.getItem(LIB_KEY) || '[]'); }
+    catch { return []; }
+  }
+  function setSavedList(list) {
+    try { localStorage.setItem(LIB_KEY, JSON.stringify(list)); } catch(_) {}
+  }
+  function saveCurrentNote() {
+    const body = notepad.value.trim();
+    if (!body) { toast('Nothing to save'); return; }
+    const title = titleInput.value.trim() || `Note ${new Date().toLocaleDateString()}`;
+    const list = getSaved();
+    list.unshift({ id: Date.now(), title, body, savedAt: Date.now() });
+    if (list.length > 50) list.length = 50;
+    setSavedList(list);
+    toast('Saved to library');
+    renderSaved();
+  }
+  function loadSavedNote(id) {
+    const n = getSaved().find(x => x.id === id);
+    if (!n) return;
+    if (notepad.value.trim() && !confirm('Replace current note?')) return;
+    titleInput.value = n.title;
+    notepad.value = n.body;
+    updateCount();
+    autosave();
+    libOverlay.classList.remove('show');
+    toast('Loaded');
+  }
+  function deleteSavedNote(id) {
+    setSavedList(getSaved().filter(x => x.id !== id));
+    renderSaved();
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function relTime(ts) {
+    const d = (Date.now() - ts) / 1000;
+    if (d < 60) return 'just now';
+    if (d < 3600) return Math.floor(d/60) + 'm ago';
+    if (d < 86400) return Math.floor(d/3600) + 'h ago';
+    if (d < 86400*7) return Math.floor(d/86400) + 'd ago';
+    return new Date(ts).toLocaleDateString();
+  }
+  function renderSaved() {
+    const list = getSaved();
+    const wrap = document.getElementById('savedList');
+    if (!list.length) {
+      wrap.innerHTML = `<div class="saved-empty">No saved notes yet.<br>Click <b>★ Save</b> to bookmark the current note.</div>`;
+      return;
+    }
+    wrap.innerHTML = list.map(n => `
+      <div class="saved-row">
+        <div class="saved-main" data-load="${n.id}">
+          <div class="saved-title">${escapeHtml(n.title)}</div>
+          <div class="saved-snippet">${escapeHtml(n.body.slice(0, 120))}${n.body.length > 120 ? '…' : ''}</div>
+          <div class="saved-date">${relTime(n.savedAt)} · ${wordCount(n.body)} word${wordCount(n.body)===1?'':'s'}</div>
+        </div>
+        <div class="saved-actions">
+          <button class="saved-load" data-load="${n.id}" title="Load">↑</button>
+          <button class="saved-del"  data-del="${n.id}"  title="Delete">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('saveBtn').onclick = saveCurrentNote;
+  document.getElementById('libBtn').onclick = () => { renderSaved(); libOverlay.classList.add('show'); };
+  document.getElementById('libClose').onclick = () => libOverlay.classList.remove('show');
+  libOverlay.addEventListener('click', e => { if (e.target === libOverlay) libOverlay.classList.remove('show'); });
+  document.getElementById('savedList').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) { deleteSavedNote(+del.dataset.del); return; }
+    const load = e.target.closest('[data-load]');
+    if (load) loadSavedNote(+load.dataset.load);
+  });
+
+  // ---- Toolbar: clear / copy / download ----
+  document.getElementById('clearBtn').onclick = () => {
+    if (!notepad.value && !titleInput.value) return;
+    if (confirm('Clear current note? (Saved notes are kept.)')) {
+      notepad.value = ''; titleInput.value = '';
+      updateCount(); autosave();
+    }
+  };
+  document.getElementById('copyBtn').onclick = () => {
+    if (!notepad.value) return toast('Nothing to copy');
+    navigator.clipboard?.writeText(notepad.value)
+      .then(()=>toast('Copied to clipboard'))
+      .catch(()=>toast('Copy failed'));
+  };
+  document.getElementById('downloadBtn').onclick = () => {
+    if (!notepad.value) return toast('Nothing to download');
+    const safeTitle = (titleInput.value.trim() || 'voice-notes')
+      .toLowerCase().replace(/[^a-z0-9-_]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40) || 'voice-notes';
+    const stamp = new Date().toISOString().slice(0,10);
+    const blob = new Blob([notepad.value], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.download = `${safeTitle}-${stamp}.txt`;
+    a.href = URL.createObjectURL(blob); a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+  };
+
+  // ---- Read aloud (Speech Synthesis) ----
+  const speakBtn = document.getElementById('speakBtn');
+  let voices = [];
+  let speaking = false;
+  function populateVoices() {
+    if (!('speechSynthesis' in window)) {
+      voiceSelect.style.display = 'none';
+      return;
+    }
+    voices = speechSynthesis.getVoices();
+    if (!voices.length) return;
+    const currentLang = langSelect.value;
+    const matching = voices.filter(v => v.lang === currentLang);
+    const sameBase = voices.filter(v => v.lang !== currentLang && v.lang.split('-')[0] === currentLang.split('-')[0]);
+    const others   = voices.filter(v => v.lang.split('-')[0] !== currentLang.split('-')[0]);
+    const prev = voiceSelect.value;
+    voiceSelect.innerHTML = '<option value="">Default voice</option>';
+    [...matching, ...sameBase, ...others].forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})`;
+      voiceSelect.appendChild(opt);
+    });
+    if (prev && voices.find(v => v.name === prev)) voiceSelect.value = prev;
+  }
+  if ('speechSynthesis' in window) {
+    populateVoices();
+    speechSynthesis.onvoiceschanged = populateVoices;
+  } else {
+    voiceSelect.style.display = 'none';
+  }
+
+  speakBtn.onclick = () => {
+    if (!('speechSynthesis' in window)) return toast('Read-aloud not supported here');
+    if (speaking) { speechSynthesis.cancel(); return; }
+    if (!notepad.value.trim()) return toast('Nothing to read');
+    const u = new SpeechSynthesisUtterance(notepad.value);
+    const chosen = voiceSelect.value && voices.find(v => v.name === voiceSelect.value);
+    if (chosen) { u.voice = chosen; u.lang = chosen.lang; }
+    else u.lang = langSelect.value;
+    u.onend = () => { speaking = false; speakBtn.textContent = '🔊 Read aloud'; };
+    u.onerror = () => { speaking = false; speakBtn.textContent = '🔊 Read aloud'; };
+    speaking = true;
+    speakBtn.textContent = '⏹ Stop reading';
+    speechSynthesis.speak(u);
+  };
+
+  // ---- Keyboard: Ctrl/Cmd+S to save ----
+  document.addEventListener('keydown', e => {
+    const ctrl = e.ctrlKey || e.metaKey;
+    if (ctrl && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault(); saveCurrentNote();
+    }
+  });
+
+  // ---- Stop speech synthesis when leaving page ----
+  window.addEventListener('beforeunload', () => {
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    if (listening) stopListening();
+  });
+
+  // ---- Init ----
+  restoreDraft();
+  updateCount();
+})();
+</script>
+</body>
+</html>

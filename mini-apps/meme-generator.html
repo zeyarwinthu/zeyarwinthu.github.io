@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meme Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f13; --panel: #181a21; --edge: #292c36;
+    --ink: #eef0f5; --muted: #7e8696; --accent: #ffcc4d; --accent2: #6c8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  .topbar {
+    display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+    background: var(--panel); border-bottom: 1px solid var(--edge);
+  }
+  .logo { font-weight: 800; font-size: 1.15rem; margin-right: auto; }
+  .logo span { color: var(--accent); }
+  .topbar .pill {
+    font-size: 0.7rem; padding: 4px 9px; border-radius: 999px;
+    background: var(--bg); border: 1px solid var(--edge); color: var(--muted);
+  }
+
+  .layout { flex: 1; display: flex; gap: 0; min-height: 0; }
+  @media (max-width: 820px) { .layout { flex-direction: column; } }
+
+  /* ---- Canvas stage ---- */
+  .stage {
+    flex: 1; display: grid; place-items: center; padding: 24px; min-width: 0;
+    background:
+      linear-gradient(45deg,#131419 25%,transparent 25%),
+      linear-gradient(-45deg,#131419 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#131419 75%),
+      linear-gradient(-45deg,transparent 75%,#131419 75%);
+    background-size: 22px 22px; background-position: 0 0,0 11px,11px -11px,-11px 0;
+    overflow: auto;
+  }
+  .canvas-holder { position: relative; max-width: 100%; }
+  canvas {
+    max-width: 100%; max-height: 70vh; border-radius: 8px; display: block;
+    box-shadow: 0 20px 50px -16px rgba(0,0,0,0.7); cursor: grab;
+  }
+  canvas.dragging { cursor: grabbing; }
+  .empty-stage {
+    text-align: center; color: var(--muted); padding: 60px 30px;
+    border: 2px dashed var(--edge); border-radius: 18px; cursor: pointer; transition: border-color 0.2s;
+  }
+  .empty-stage:hover { border-color: var(--accent2); }
+  .empty-stage .big { font-size: 3rem; margin-bottom: 14px; }
+  .empty-stage b { color: var(--ink); }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--accent2); color: #fff; padding: 10px 18px; border-radius: 999px;
+    font-size: 0.82rem; font-weight: 600; opacity: 0; pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-6px); }
+
+  /* ---- Controls panel ---- */
+  .panel {
+    width: 340px; background: var(--panel); border-left: 1px solid var(--edge);
+    padding: 20px; overflow-y: auto; flex-shrink: 0;
+  }
+  @media (max-width: 820px) { .panel { width: 100%; border-left: none; border-top: 1px solid var(--edge); } }
+  .section { margin-bottom: 22px; }
+  .section h3 { font-size: 0.66rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 11px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .section h3 .mini {
+    font-size: 0.66rem; letter-spacing: 0; text-transform: none; color: var(--accent2);
+    cursor: pointer; font-weight: 500;
+  }
+  .section h3 .mini:hover { color: var(--accent); }
+
+  .file-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; background: var(--bg); border: 1px solid var(--edge); border-radius: 11px;
+    padding: 12px; cursor: pointer; color: var(--ink); font-family: inherit; font-size: 0.85rem;
+    font-weight: 500; transition: border-color 0.2s;
+  }
+  .file-btn:hover { border-color: var(--accent2); }
+  .sample-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+  .sample-row button {
+    background: var(--bg); border: 1px solid var(--edge); color: var(--muted);
+    padding: 7px 4px; border-radius: 8px; font-size: 0.7rem; cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .sample-row button:hover { border-color: var(--accent2); color: var(--ink); }
+
+  /* Captions list */
+  .cap-item {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 7px;
+    background: var(--bg); border: 1px solid var(--edge); border-radius: 10px;
+    padding: 4px 6px 4px 10px; transition: border-color 0.15s;
+  }
+  .cap-item.selected { border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(108,140,255,0.15); }
+  .cap-item .grip { color: var(--muted); font-size: 0.85rem; cursor: pointer; }
+  .cap-item input {
+    flex: 1; background: transparent; border: none; color: var(--ink);
+    font-family: inherit; font-size: 0.83rem; outline: none; padding: 7px 4px;
+  }
+  .cap-item .del {
+    background: transparent; border: none; color: var(--muted); cursor: pointer;
+    font-size: 1rem; padding: 4px 8px; border-radius: 6px;
+  }
+  .cap-item .del:hover { color: #ff6b6b; background: rgba(255,107,107,0.08); }
+  .add-cap {
+    width: 100%; background: transparent; border: 1px dashed var(--edge); color: var(--muted);
+    padding: 9px; border-radius: 10px; cursor: pointer; font-family: inherit; font-size: 0.78rem;
+    transition: all 0.15s; margin-top: 4px;
+  }
+  .add-cap:hover { border-color: var(--accent2); color: var(--ink); }
+
+  label.fld { display: block; font-size: 0.74rem; color: var(--muted); margin-bottom: 6px; }
+  input[type=text] {
+    width: 100%; background: var(--bg); border: 1px solid var(--edge); border-radius: 10px;
+    padding: 11px 13px; color: var(--ink); font-family: inherit; font-size: 0.88rem; outline: none; margin-bottom: 12px;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+
+  .slider-row { margin-bottom: 14px; }
+  .slider-row .lbl { display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 6px; }
+  .slider-row .lbl span:last-child { font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+  input[type=range] { width: 100%; -webkit-appearance: none; appearance: none; height: 5px; background: var(--edge); border-radius: 3px; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+  input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; border: none; }
+
+  .row2 { display: flex; gap: 12px; }
+  .row2 > div { flex: 1; }
+  .color-input { display: flex; align-items: center; gap: 8px; }
+  .color-input input[type=color] { width: 38px; height: 36px; border: 1px solid var(--edge); border-radius: 8px; background: none; cursor: pointer; padding: 2px; }
+  .color-input span { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); }
+
+  select {
+    width: 100%; background: var(--bg); border: 1px solid var(--edge); color: var(--ink);
+    border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 0.84rem; outline: none; cursor: pointer;
+  }
+
+  .toggle-row { display: flex; gap: 6px; }
+  .toggle-row button {
+    flex: 1; background: var(--bg); border: 1px solid var(--edge); color: var(--muted);
+    padding: 8px 4px; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 0.74rem; transition: all 0.15s;
+  }
+  .toggle-row button.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+  .icon-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .icon-row button {
+    background: var(--bg); border: 1px solid var(--edge); color: var(--muted);
+    padding: 9px 4px; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 0.72rem;
+    transition: all 0.15s; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  .icon-row button:hover { border-color: var(--accent2); color: var(--ink); }
+  .icon-row button.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+  .icon-row button .ic { font-size: 1rem; }
+
+  .download-row { display: flex; gap: 8px; }
+  .download-btn {
+    flex: 1; background: linear-gradient(120deg, var(--accent), #ff9f43); color: #2a1e00;
+    border: none; border-radius: 12px; padding: 14px; font-family: inherit; font-weight: 700;
+    font-size: 0.92rem; cursor: pointer; transition: transform 0.12s;
+  }
+  .download-btn:hover { transform: translateY(-2px); }
+  .download-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .copy-btn {
+    background: var(--bg); border: 1px solid var(--edge); color: var(--ink);
+    border-radius: 12px; padding: 0 14px; cursor: pointer; font-family: inherit; font-size: 1rem;
+    transition: border-color 0.15s;
+  }
+  .copy-btn:hover { border-color: var(--accent2); }
+  .copy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .hint { font-size: 0.72rem; color: var(--muted); margin-top: 10px; line-height: 1.5; text-align: center; }
+  .hint kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    background: var(--bg); border: 1px solid var(--edge); border-radius: 4px;
+    padding: 1px 5px; color: var(--ink);
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">Meme<span>Forge</span></div>
+    <div class="pill" id="capCounter">2 captions</div>
+  </div>
+
+  <div class="layout">
+    <div class="stage" id="stage">
+      <div class="empty-stage" id="emptyStage">
+        <div class="big">🖼️</div>
+        <b>Click to upload an image</b><br>
+        or drag &amp; drop it here
+      </div>
+      <div class="canvas-holder" id="canvasHolder" style="display:none">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section">
+        <h3>Image</h3>
+        <label class="file-btn" for="fileInput">📁 Upload image</label>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <div class="sample-row">
+          <button data-sample="drake">Drake</button>
+          <button data-sample="brain">Brain</button>
+          <button data-sample="bf">Distracted</button>
+          <button data-sample="plain">Blank</button>
+          <button data-sample="gradient">Gradient</button>
+          <button data-sample="noise">Noise</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Captions <span class="mini" id="resetPositions">reset positions</span></h3>
+        <div id="captionsList"></div>
+        <button class="add-cap" id="addCap">+ Add caption</button>
+      </div>
+
+      <div class="section">
+        <h3>Text Style</h3>
+        <div class="slider-row">
+          <div class="lbl"><span>Font size</span><span id="fontSizeVal">48</span></div>
+          <input type="range" id="fontSize" min="14" max="140" value="48">
+        </div>
+        <div class="slider-row">
+          <div class="lbl"><span>Outline width</span><span id="strokeVal">6</span></div>
+          <input type="range" id="strokeWidth" min="0" max="20" value="6">
+        </div>
+        <div class="row2">
+          <div>
+            <label class="fld">Text color</label>
+            <div class="color-input"><input type="color" id="fillColor" value="#ffffff"><span id="fillVal">#FFFFFF</span></div>
+          </div>
+          <div>
+            <label class="fld">Outline</label>
+            <div class="color-input"><input type="color" id="strokeColor" value="#000000"><span id="strokeColorVal">#000000</span></div>
+          </div>
+        </div>
+        <label class="fld" style="margin-top:12px">Font</label>
+        <select id="fontFamily">
+          <option value="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif">Impact (classic)</option>
+          <option value="'Arial Black', Arial, sans-serif">Arial Black</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Courier New', monospace">Courier</option>
+          <option value="'Inter', sans-serif">Inter</option>
+        </select>
+        <label class="fld" style="margin-top:12px">Effect</label>
+        <div class="toggle-row" id="effectToggle">
+          <button data-effect="outline" class="active">Outline</button>
+          <button data-effect="shadow">Shadow</button>
+          <button data-effect="none">None</button>
+        </div>
+        <label class="fld" style="margin-top:12px">Letter case</label>
+        <div class="toggle-row" id="caseToggle">
+          <button data-case="upper" class="active">UPPER</button>
+          <button data-case="as-is">As typed</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Image Filters <span class="mini" id="resetFilters">reset</span></h3>
+        <div class="slider-row">
+          <div class="lbl"><span>Brightness</span><span id="brightVal">100%</span></div>
+          <input type="range" id="brightness" min="0" max="200" value="100">
+        </div>
+        <div class="slider-row">
+          <div class="lbl"><span>Contrast</span><span id="contrastVal">100%</span></div>
+          <input type="range" id="contrast" min="0" max="200" value="100">
+        </div>
+        <div class="slider-row">
+          <div class="lbl"><span>Saturation</span><span id="satVal">100%</span></div>
+          <input type="range" id="saturation" min="0" max="200" value="100">
+        </div>
+        <div class="slider-row">
+          <div class="lbl"><span>Grayscale</span><span id="grayVal">0%</span></div>
+          <input type="range" id="grayscale" min="0" max="100" value="0">
+        </div>
+        <div class="icon-row">
+          <button id="flipH"><span class="ic">↔️</span>Flip H</button>
+          <button id="flipV"><span class="ic">↕️</span>Flip V</button>
+          <button id="invert"><span class="ic">🌓</span>Invert</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Export</h3>
+        <div class="download-row">
+          <button class="download-btn" id="downloadBtn" disabled>↓ Download PNG</button>
+          <button class="copy-btn" id="copyBtn" disabled title="Copy to clipboard">📋</button>
+        </div>
+        <div class="hint" id="hint">
+          Upload an image to begin. Drag captions on the canvas to position.
+          Select one and use <kbd>←↑↓→</kbd> to nudge, <kbd>Del</kbd> to remove.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const holder = document.getElementById('canvasHolder');
+  const emptyStage = document.getElementById('emptyStage');
+  const stage = document.getElementById('stage');
+  const capList = document.getElementById('captionsList');
+  const capCounter = document.getElementById('capCounter');
+
+  let img = null;
+  const opts = {
+    fontSize: 48, stroke: 6, fill: '#ffffff', strokeColor: '#000000',
+    font: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
+    upper: true, effect: 'outline'
+  };
+  const filters = { brightness: 100, contrast: 100, saturation: 100, grayscale: 0, flipH: false, flipV: false, invert: false };
+
+  let captions = [
+    { id: 0, text: 'WHEN YOU FINISH THE CODE', xFrac: 0.5, yFrac: 0.12 },
+    { id: 1, text: 'BUT IT WORKS FIRST TRY', xFrac: 0.5, yFrac: 0.88 }
+  ];
+  let nextId = 2;
+  let selectedId = null;
+  let dragging = null;
+  let dragOffset = { dx: 0, dy: 0 };
+
+  // ---------- Toast ----------
+  let toastTimer = null;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+  }
+
+  // ---------- Image loading ----------
+  function loadImage(src) {
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = () => {
+      img = im;
+      emptyStage.style.display = 'none';
+      holder.style.display = 'block';
+      const maxW = 1000;
+      const scale = im.width > maxW ? maxW / im.width : 1;
+      canvas.width = Math.round(im.width * scale);
+      canvas.height = Math.round(im.height * scale);
+      document.getElementById('downloadBtn').disabled = false;
+      document.getElementById('copyBtn').disabled = false;
+      draw();
+    };
+    im.onerror = () => alert('Could not load that image.');
+    im.src = src;
+  }
+
+  document.getElementById('fileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => loadImage(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+  emptyStage.onclick = () => document.getElementById('fileInput').click();
+
+  ['dragover','dragenter'].forEach(ev => stage.addEventListener(ev, e => { e.preventDefault(); }));
+  stage.addEventListener('drop', e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = ev => loadImage(ev.target.result);
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // ---------- Sample backgrounds ----------
+  document.querySelectorAll('[data-sample]').forEach(b => {
+    b.onclick = () => makeSample(b.dataset.sample);
+  });
+  function makeSample(kind) {
+    const c = document.createElement('canvas');
+    c.width = 800; c.height = 800;
+    const x = c.getContext('2d');
+    if (kind === 'plain') { x.fillStyle = '#cfd6e4'; x.fillRect(0,0,800,800); }
+    else if (kind === 'gradient') {
+      const g = x.createLinearGradient(0,0,800,800);
+      g.addColorStop(0,'#6c8cff'); g.addColorStop(0.5,'#a06bd8'); g.addColorStop(1,'#ff5c8a');
+      x.fillStyle = g; x.fillRect(0,0,800,800);
+    } else if (kind === 'noise') {
+      const id = x.createImageData(800,800);
+      for (let i=0; i<id.data.length; i+=4) {
+        const v = 180 + Math.random()*60;
+        id.data[i]=v; id.data[i+1]=v; id.data[i+2]=v; id.data[i+3]=255;
+      }
+      x.putImageData(id,0,0);
+    } else if (kind === 'brain') { // expanding-brain 4 panels
+      const colors = ['#1a1a2e','#16213e','#533483','#e94560'];
+      colors.forEach((col,i) => {
+        x.fillStyle = col; x.fillRect(0, i*200, 800, 200);
+        x.fillStyle = 'rgba(255,255,255,0.15)';
+        x.font = `${60 + i*20}px sans-serif`; x.textAlign='center'; x.textBaseline='middle';
+        x.fillText('🧠', 200, i*200 + 100);
+      });
+    } else if (kind === 'bf') { // distracted boyfriend 3 zones
+      x.fillStyle = '#6b8e8a'; x.fillRect(0,0,800,800);
+      x.fillStyle = 'rgba(0,0,0,0.15)';
+      x.fillRect(0,500,800,300);
+      x.font = '120px sans-serif'; x.textAlign='center';
+      x.fillText('👩', 180, 420);
+      x.fillText('👨', 420, 420);
+      x.fillText('👩‍🦰', 660, 420);
+    } else { // drake-style two-panel
+      x.fillStyle = '#f2e9d8'; x.fillRect(0,0,800,800);
+      x.fillStyle = '#e8dcc4'; x.fillRect(400,0,400,800);
+      x.strokeStyle = '#b8a888'; x.lineWidth = 3; x.beginPath(); x.moveTo(400,0); x.lineTo(400,800); x.stroke();
+      x.font = '120px sans-serif'; x.textAlign='center';
+      x.fillText('🙅', 200, 240); x.fillText('🙆', 200, 640);
+    }
+    loadImage(c.toDataURL());
+    resetPositionsForTemplate(kind);
+  }
+
+  function resetPositionsForTemplate(kind) {
+    if (kind === 'brain') {
+      captions = [0,1,2,3].map((_,i) => ({ id: nextId++, text: ['NORMAL','INTERESTING','MIND-BLOWING','TRANSCENDENT'][i], xFrac: 0.6, yFrac: 0.125 + i*0.25 }));
+    } else if (kind === 'drake') {
+      captions = [
+        { id: nextId++, text: 'TABS', xFrac: 0.75, yFrac: 0.30 },
+        { id: nextId++, text: 'SPACES', xFrac: 0.75, yFrac: 0.80 }
+      ];
+    } else if (kind === 'bf') {
+      captions = [
+        { id: nextId++, text: 'NEW FRAMEWORK', xFrac: 0.82, yFrac: 0.65 },
+        { id: nextId++, text: 'ME', xFrac: 0.52, yFrac: 0.65 },
+        { id: nextId++, text: 'WORKING CODE', xFrac: 0.22, yFrac: 0.65 }
+      ];
+    } else {
+      captions = [
+        { id: nextId++, text: 'TOP TEXT', xFrac: 0.5, yFrac: 0.12 },
+        { id: nextId++, text: 'BOTTOM TEXT', xFrac: 0.5, yFrac: 0.88 }
+      ];
+    }
+    selectedId = null;
+    renderCaptionsList();
+    draw();
+  }
+
+  // ---------- Drawing ----------
+  function wrapLines(text, maxWidth) {
+    const words = text.split(' ');
+    const lines = []; let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = w; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function applyImageFilter() {
+    return `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%) grayscale(${filters.grayscale}%)${filters.invert ? ' invert(1)' : ''}`;
+  }
+
+  function draw() {
+    if (!img) return;
+    ctx.save();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.filter = applyImageFilter();
+    ctx.translate(filters.flipH ? canvas.width : 0, filters.flipV ? canvas.height : 0);
+    ctx.scale(filters.flipH ? -1 : 1, filters.flipV ? -1 : 1);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    const fs = opts.fontSize * (canvas.width / 500);
+    ctx.font = `700 ${fs}px ${opts.font}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineJoin = 'round';
+
+    captions.forEach(cap => drawCaption(cap, fs));
+  }
+
+  function drawCaption(cap, fs) {
+    const t = opts.upper ? cap.text.toUpperCase() : cap.text;
+    const maxW = canvas.width * 0.92;
+    const lines = t ? wrapLines(t, maxW) : [''];
+    const lineH = fs * 1.1;
+    const cx = cap.xFrac * canvas.width;
+    const cy = cap.yFrac * canvas.height;
+    const totalH = lines.length * lineH;
+    const startY = cy - totalH / 2 + lineH * 0.8;
+
+    const widths = lines.map(l => ctx.measureText(l).width);
+    const w = Math.max(...widths, fs * 0.4) + 16;
+    cap._bbox = { x: cx - w/2, y: cy - totalH/2, w, h: totalH };
+
+    if (!t) {
+      if (cap.id === selectedId) drawSelectionBox(cap._bbox);
+      return;
+    }
+
+    ctx.save();
+    ctx.fillStyle = opts.fill;
+    ctx.strokeStyle = opts.strokeColor;
+    ctx.lineWidth = opts.stroke * (canvas.width / 500);
+
+    if (opts.effect === 'shadow') {
+      ctx.shadowColor = opts.strokeColor;
+      ctx.shadowBlur = opts.stroke * 2;
+      ctx.shadowOffsetX = Math.max(2, opts.stroke / 2);
+      ctx.shadowOffsetY = Math.max(2, opts.stroke / 2);
+    }
+
+    lines.forEach((ln, i) => {
+      const ly = startY + i * lineH;
+      if (opts.effect === 'outline' && opts.stroke > 0) ctx.strokeText(ln, cx, ly);
+      ctx.fillText(ln, cx, ly);
+    });
+    ctx.restore();
+
+    if (cap.id === selectedId) drawSelectionBox(cap._bbox);
+  }
+
+  function drawSelectionBox(b) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(108,140,255,0.9)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(b.x, b.y, b.w, b.h);
+    ctx.restore();
+  }
+
+  // ---------- Captions list UI ----------
+  function renderCaptionsList() {
+    capList.innerHTML = '';
+    captions.forEach(cap => {
+      const item = document.createElement('div');
+      item.className = 'cap-item' + (cap.id === selectedId ? ' selected' : '');
+      item.innerHTML = `<span class="grip">⋮⋮</span>
+        <input type="text" placeholder="Caption text" value="${escapeAttr(cap.text)}">
+        <button class="del" title="Delete">×</button>`;
+      const input = item.querySelector('input');
+      input.addEventListener('input', e => { cap.text = e.target.value; draw(); });
+      input.addEventListener('focus', () => { selectedId = cap.id; highlightSelected(); draw(); });
+      item.querySelector('.del').onclick = () => removeCaption(cap.id);
+      item.querySelector('.grip').onclick = () => { selectedId = cap.id; highlightSelected(); draw(); };
+      capList.appendChild(item);
+    });
+    capCounter.textContent = `${captions.length} caption${captions.length === 1 ? '' : 's'}`;
+  }
+  function highlightSelected() {
+    capList.querySelectorAll('.cap-item').forEach((el, i) => {
+      el.classList.toggle('selected', captions[i].id === selectedId);
+    });
+  }
+  function escapeAttr(s) { return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+  function addCaption() {
+    captions.push({ id: nextId++, text: 'NEW CAPTION', xFrac: 0.5, yFrac: 0.5 });
+    selectedId = captions[captions.length-1].id;
+    renderCaptionsList();
+    draw();
+  }
+  function removeCaption(id) {
+    captions = captions.filter(c => c.id !== id);
+    if (selectedId === id) selectedId = null;
+    renderCaptionsList();
+    draw();
+  }
+  document.getElementById('addCap').onclick = addCaption;
+  document.getElementById('resetPositions').onclick = () => {
+    const n = captions.length;
+    captions.forEach((c, i) => { c.xFrac = 0.5; c.yFrac = n === 1 ? 0.5 : 0.1 + (i * 0.8 / (n-1)); });
+    draw();
+  };
+
+  // ---------- Dragging text ----------
+  function getCanvasPoint(e) {
+    const r = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    return { x: cx * (canvas.width / r.width), y: cy * (canvas.height / r.height) };
+  }
+  function hitTest(pt) {
+    // search topmost first (last drawn)
+    for (let i = captions.length - 1; i >= 0; i--) {
+      const b = captions[i]._bbox;
+      if (!b) continue;
+      if (pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h) return captions[i];
+    }
+    return null;
+  }
+  function startDrag(e) {
+    if (!img) return;
+    const pt = getCanvasPoint(e);
+    const cap = hitTest(pt);
+    if (cap) {
+      dragging = cap;
+      selectedId = cap.id;
+      dragOffset.dx = pt.x - cap.xFrac * canvas.width;
+      dragOffset.dy = pt.y - cap.yFrac * canvas.height;
+      canvas.classList.add('dragging');
+      highlightSelected();
+      draw();
+      e.preventDefault();
+    } else {
+      selectedId = null;
+      highlightSelected();
+      draw();
+    }
+  }
+  function moveDrag(e) {
+    if (!dragging) return;
+    const pt = getCanvasPoint(e);
+    dragging.xFrac = Math.max(0.02, Math.min(0.98, (pt.x - dragOffset.dx) / canvas.width));
+    dragging.yFrac = Math.max(0.04, Math.min(0.96, (pt.y - dragOffset.dy) / canvas.height));
+    draw();
+    e.preventDefault();
+  }
+  function endDrag() { dragging = null; canvas.classList.remove('dragging'); }
+  canvas.addEventListener('mousedown', startDrag);
+  window.addEventListener('mousemove', moveDrag);
+  window.addEventListener('mouseup', endDrag);
+  canvas.addEventListener('touchstart', startDrag, {passive:false});
+  canvas.addEventListener('touchmove', moveDrag, {passive:false});
+  canvas.addEventListener('touchend', endDrag);
+
+  // ---------- Keyboard ----------
+  window.addEventListener('keydown', e => {
+    if (selectedId === null) return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    const cap = captions.find(c => c.id === selectedId);
+    if (!cap) return;
+    const step = e.shiftKey ? 0.02 : 0.005;
+    if (e.key === 'ArrowLeft') { cap.xFrac = Math.max(0.02, cap.xFrac - step); draw(); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { cap.xFrac = Math.min(0.98, cap.xFrac + step); draw(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { cap.yFrac = Math.max(0.04, cap.yFrac - step); draw(); e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { cap.yFrac = Math.min(0.96, cap.yFrac + step); draw(); e.preventDefault(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { removeCaption(selectedId); e.preventDefault(); }
+  });
+
+  // ---------- Style controls ----------
+  const bind = (id, fn) => document.getElementById(id).addEventListener('input', e => { fn(e.target.value); draw(); });
+  bind('fontSize', v => { opts.fontSize = +v; document.getElementById('fontSizeVal').textContent = v; });
+  bind('strokeWidth', v => { opts.stroke = +v; document.getElementById('strokeVal').textContent = v; });
+  bind('fillColor', v => { opts.fill = v; document.getElementById('fillVal').textContent = v.toUpperCase(); });
+  bind('strokeColor', v => { opts.strokeColor = v; document.getElementById('strokeColorVal').textContent = v.toUpperCase(); });
+  document.getElementById('fontFamily').addEventListener('change', e => { opts.font = e.target.value; draw(); });
+
+  document.getElementById('caseToggle').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    opts.upper = b.dataset.case === 'upper';
+    document.querySelectorAll('#caseToggle button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    draw();
+  });
+  document.getElementById('effectToggle').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    opts.effect = b.dataset.effect;
+    document.querySelectorAll('#effectToggle button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    draw();
+  });
+
+  // ---------- Filter controls ----------
+  document.getElementById('brightness').addEventListener('input', e => { filters.brightness = +e.target.value; document.getElementById('brightVal').textContent = e.target.value+'%'; draw(); });
+  document.getElementById('contrast').addEventListener('input', e => { filters.contrast = +e.target.value; document.getElementById('contrastVal').textContent = e.target.value+'%'; draw(); });
+  document.getElementById('saturation').addEventListener('input', e => { filters.saturation = +e.target.value; document.getElementById('satVal').textContent = e.target.value+'%'; draw(); });
+  document.getElementById('grayscale').addEventListener('input', e => { filters.grayscale = +e.target.value; document.getElementById('grayVal').textContent = e.target.value+'%'; draw(); });
+
+  const toggleBtn = (id, key) => {
+    document.getElementById(id).onclick = () => {
+      filters[key] = !filters[key];
+      document.getElementById(id).classList.toggle('active', filters[key]);
+      draw();
+    };
+  };
+  toggleBtn('flipH', 'flipH');
+  toggleBtn('flipV', 'flipV');
+  toggleBtn('invert', 'invert');
+
+  document.getElementById('resetFilters').onclick = () => {
+    filters.brightness = 100; filters.contrast = 100; filters.saturation = 100; filters.grayscale = 0;
+    filters.flipH = false; filters.flipV = false; filters.invert = false;
+    ['brightness','contrast','saturation','grayscale'].forEach(k => {
+      document.getElementById(k).value = k === 'grayscale' ? 0 : 100;
+    });
+    document.getElementById('brightVal').textContent = '100%';
+    document.getElementById('contrastVal').textContent = '100%';
+    document.getElementById('satVal').textContent = '100%';
+    document.getElementById('grayVal').textContent = '0%';
+    ['flipH','flipV','invert'].forEach(id => document.getElementById(id).classList.remove('active'));
+    draw();
+  };
+
+  // ---------- Export ----------
+  document.getElementById('downloadBtn').onclick = () => {
+    if (!img) return;
+    const prevSelected = selectedId;
+    selectedId = null; draw();
+    const a = document.createElement('a');
+    a.download = 'meme.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    selectedId = prevSelected; draw();
+  };
+  document.getElementById('copyBtn').onclick = async () => {
+    if (!img) return;
+    const prevSelected = selectedId;
+    selectedId = null; draw();
+    try {
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      toast('Copied to clipboard');
+    } catch (err) {
+      toast('Copy failed — try download');
+    }
+    selectedId = prevSelected; draw();
+  };
+
+  renderCaptionsList();
+})();
+</script>
+</body>
+</html>

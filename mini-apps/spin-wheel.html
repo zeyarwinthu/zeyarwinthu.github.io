@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spin the Wheel</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #160d28; --bg2: #0d0719; --panel: #221538; --edge: #36254f;
+    --ink: #f2ecff; --muted: #9b88c0; --accent: #ffd166; --pointer: #ff5c8a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: radial-gradient(circle at 50% -10%, #2a1850 0%, var(--bg2) 60%);
+    color: var(--ink); font-family: 'Fredoka', sans-serif;
+    min-height: 100vh; padding: 24px 18px 50px;
+    display: flex; flex-direction: column; align-items: center; gap: 22px;
+  }
+  h1 {
+    font-weight: 700; font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: -0.01em;
+    text-align: center; display: flex; align-items: center; gap: 10px;
+  }
+  h1 .ic { color: var(--accent); }
+
+  .layout {
+    display: flex; gap: 28px; align-items: flex-start;
+    width: min(1100px, 100%); justify-content: center; flex-wrap: wrap;
+  }
+  .editor.left-panel  { order: 1; }
+  .wheel-area         { order: 2; }
+  .editor.right-panel { order: 3; }
+  @media (max-width: 920px) {
+    .wheel-area         { order: 1; }
+    .editor.right-panel { order: 2; }
+    .editor.left-panel  { order: 3; }
+  }
+
+  /* ---- Wheel ---- */
+  .wheel-area { position: relative; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .wheel-wrap { position: relative; width: min(82vw, 380px); aspect-ratio: 1; }
+  .pointer {
+    position: absolute; top: -6px; left: 50%; transform-origin: 50% 90%;
+    transform: translateX(-50%); z-index: 5;
+    width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent;
+    border-top: 30px solid var(--pointer); filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+    pointer-events: none;
+  }
+  .pointer::after {
+    content: ''; position: absolute; top: -34px; left: -8px; width: 16px; height: 16px;
+    background: var(--pointer); border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  canvas#wheel {
+    width: 100%; height: 100%; border-radius: 50%; display: block;
+    box-shadow: 0 0 0 8px var(--panel), 0 0 0 11px var(--edge), 0 24px 60px -16px rgba(0,0,0,0.7);
+    will-change: transform;
+    touch-action: none;
+    cursor: grab;
+  }
+  canvas#wheel.grabbing { cursor: grabbing; }
+  canvas#wheel.spinning { cursor: default; }
+  .hub {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 58px; height: 58px; border-radius: 50%; z-index: 4;
+    background: radial-gradient(circle at 38% 35%, #fff, #d8d0e8);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: grid; place-items: center;
+    cursor: pointer; border: none; transition: transform 0.12s;
+  }
+  .hub:hover { transform: translate(-50%,-50%) scale(1.06); }
+  .hub:active { transform: translate(-50%,-50%) scale(0.95); }
+  .hub span { font-size: 1.4rem; }
+
+  .spin-btn {
+    background: linear-gradient(120deg, var(--pointer), #ff8c42); color: #fff; border: none;
+    padding: 15px 50px; border-radius: 50px; font-family: 'Fredoka', sans-serif; font-weight: 600;
+    font-size: 1.2rem; cursor: pointer; transition: transform 0.12s, box-shadow 0.2s;
+    box-shadow: 0 10px 28px -8px rgba(255,92,138,0.6);
+  }
+  .spin-btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .spin-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .drag-hint { font-size: 0.74rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; opacity: 0.75; }
+
+  /* ---- Editor ---- */
+  .editor { background: var(--panel); border: 1px solid var(--edge); border-radius: 20px; padding: 20px; width: min(82vw, 260px); }
+  .editor h2 {
+    font-weight: 600; font-size: 1.05rem; display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 14px; gap: 8px;
+  }
+  .editor h2 .count { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--muted); font-weight: 500; margin-right: auto; margin-left: 6px; }
+  .icon-btn {
+    background: var(--bg2); border: 1px solid var(--edge); color: var(--muted);
+    border-radius: 8px; width: 32px; height: 32px; cursor: pointer; font-size: 0.9rem;
+    display: grid; place-items: center; transition: all 0.15s;
+  }
+  .icon-btn:hover { color: var(--ink); border-color: var(--pointer); }
+  .icon-btn.active { color: var(--accent); border-color: var(--accent); }
+  .add-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .add-row textarea {
+    background: var(--bg2); border: 1px solid var(--edge); border-radius: 10px;
+    padding: 11px 13px; color: var(--ink); font-family: 'Fredoka', sans-serif; font-size: 0.9rem;
+    outline: none; resize: vertical; min-height: 240px; max-height: 480px;
+    line-height: 1.45; transition: border-color 0.15s;
+  }
+  .add-row textarea:focus { border-color: var(--pointer); }
+  .add-row textarea::placeholder { color: var(--muted); opacity: 0.7; }
+  .add-row .hint {
+    font-size: 0.7rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+    display: flex; justify-content: space-between; opacity: 0.75;
+  }
+  .add-row .hint .saved { color: var(--accent); opacity: 0; transition: opacity 0.3s; }
+  .add-row .hint .saved.show { opacity: 1; }
+  .opts { display: flex; flex-direction: column; gap: 7px; max-height: 280px; overflow-y: auto; padding-right: 2px; }
+  .opts::-webkit-scrollbar { width: 6px; }
+  .opts::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 3px; }
+  .opt {
+    display: flex; align-items: center; gap: 10px; background: var(--bg2);
+    border: 1px solid var(--edge); border-radius: 10px; padding: 9px 12px;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-6px); } }
+  .opt .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 0 2px rgba(255,255,255,0.06); }
+  .opt .label {
+    flex: 1; font-size: 0.88rem; word-break: break-word; cursor: text;
+    padding: 2px 4px; border-radius: 4px; transition: background 0.12s;
+  }
+  .opt .label:hover { background: rgba(255,255,255,0.05); }
+  .opt input.edit {
+    flex: 1; background: transparent; border: 1px solid var(--pointer); color: var(--ink);
+    font-family: inherit; font-size: 0.88rem; padding: 2px 6px; border-radius: 4px; outline: none;
+  }
+  .opt .del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; opacity: 0.6; transition: all 0.15s; }
+  .opt .del:hover { opacity: 1; color: var(--pointer); }
+  .preset-row { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+  .preset-row button {
+    background: var(--bg2); border: 1px solid var(--edge); color: var(--muted);
+    padding: 6px 12px; border-radius: 20px; font-size: 0.74rem; cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .preset-row button:hover { border-color: var(--pointer); color: var(--ink); }
+
+  /* ---- History ---- */
+  .history {
+    margin-top: 16px; border-top: 1px solid var(--edge); padding-top: 14px;
+  }
+  .history h3 {
+    font-weight: 600; font-size: 0.85rem; color: var(--muted); margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .history h3 .clear-hist {
+    background: none; border: none; color: var(--muted); font-size: 0.7rem; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; opacity: 0.7;
+  }
+  .history h3 .clear-hist:hover { color: var(--pointer); opacity: 1; }
+  .hist-list { display: flex; flex-direction: column; gap: 5px; max-height: 140px; overflow-y: auto; }
+  .hist-list::-webkit-scrollbar { width: 6px; }
+  .hist-list::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 3px; }
+  .hist-item {
+    display: flex; justify-content: space-between; gap: 10px;
+    font-size: 0.8rem; padding: 4px 8px; border-radius: 6px;
+    background: var(--bg2); border: 1px solid transparent;
+  }
+  .hist-item .when { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; }
+  .hist-empty { color: var(--muted); font-size: 0.78rem; font-style: italic; opacity: 0.7; }
+
+  /* ---- Winner modal ---- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(13,7,25,0.85); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; z-index: 50;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px;
+  }
+  .overlay.show { opacity: 1; pointer-events: auto; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: 24px; padding: 36px 32px;
+    text-align: center; width: min(84vw, 340px); transform: scale(0.8);
+    transition: transform 0.4s cubic-bezier(.2,1.5,.4,1);
+  }
+  .overlay.show .modal { transform: scale(1); }
+  .modal .crown { font-size: 3rem; animation: bounce 0.7s ease; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .modal .sub { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.2em; text-transform: uppercase; margin: 8px 0; }
+  .modal .winner {
+    font-weight: 700; font-size: 2rem; line-height: 1.2; margin-bottom: 22px;
+    color: var(--accent); word-break: break-word;
+  }
+  .modal .btns { display: flex; gap: 10px; }
+  .modal button {
+    flex: 1; border: none; border-radius: 12px; padding: 13px; cursor: pointer;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 0.9rem; transition: transform 0.12s;
+  }
+  .modal button:hover { transform: translateY(-2px); }
+  .btn-spin-again { background: var(--pointer); color: #fff; }
+  .btn-remove { background: var(--bg2); color: var(--ink); border: 1px solid var(--edge) !important; }
+  .modal .remove-note { font-size: 0.72rem; color: var(--muted); margin-top: 12px; }
+
+  canvas#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+</style>
+</head>
+<body>
+  <h1><span class="ic">🎡</span> Spin the Wheel</h1>
+
+  <div class="layout">
+    <div class="wheel-area">
+      <div class="wheel-wrap">
+        <div class="pointer" id="pointer"></div>
+        <canvas id="wheel" width="700" height="700"></canvas>
+        <button class="hub" id="hub" title="Spin"><span>🎯</span></button>
+      </div>
+      <button class="spin-btn" id="spinBtn">SPIN</button>
+      <div class="drag-hint">Tip: flick the wheel to spin it</div>
+    </div>
+
+    <div class="editor left-panel">
+      <h2>Edit options</h2>
+      <div class="add-row">
+        <textarea id="optInput" placeholder="One option per line…
+e.g.
+Pizza
+Sushi
+Tacos" spellcheck="false"></textarea>
+        <div class="hint">
+          <span>One per line · auto-saves as you type</span>
+          <span class="saved" id="savedTag">✓ saved</span>
+        </div>
+      </div>
+      <div class="preset-row">
+        <button data-preset="food">🍕 What to eat</button>
+        <button data-preset="yesno">✅ Yes / No</button>
+        <button data-preset="numbers">🔢 1–10</button>
+        <button data-preset="activities">🎲 Activities</button>
+      </div>
+    </div>
+
+    <div class="editor right-panel">
+      <h2>
+        Options <span class="count" id="count">0</span>
+        <button class="icon-btn" id="shuffleBtn" title="Shuffle order">🔀</button>
+        <button class="icon-btn" id="clearBtn" title="Clear all">🗑</button>
+        <button class="icon-btn" id="soundBtn" title="Toggle sound (M)">🔊</button>
+      </h2>
+      <div class="opts" id="opts"></div>
+
+      <div class="history">
+        <h3>Recent winners <button class="clear-hist" id="clearHist">clear</button></h3>
+        <div class="hist-list" id="histList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div class="crown">👑</div>
+      <div class="sub">Winner</div>
+      <div class="winner" id="winnerText">—</div>
+      <div class="btns">
+        <button class="btn-remove" id="removeWinner">Remove it</button>
+        <button class="btn-spin-again" id="spinAgain">Spin again</button>
+      </div>
+      <div class="remove-note">"Remove it" takes the winner off the wheel — great for drawing names.</div>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+<script>
+(function(){
+  const COLORS = ['#ff5c8a','#ffd166','#5ee0a8','#4ca3e8','#a06bd8','#ff8c42','#48d1c4','#f06292','#9ccc65','#7986cb','#ffb74d','#4db6ac'];
+  const PRESETS = {
+    food: ['Pizza','Sushi','Burgers','Tacos','Pasta','Salad','Ramen','Curry'],
+    yesno: ['Yes','No'],
+    numbers: ['1','2','3','4','5','6','7','8','9','10'],
+    activities: ['Movie night','Go for a walk','Board game','Read a book','Cook something','Call a friend','Workout','Nap']
+  };
+  const LS_OPTS = 'sw-options', LS_HIST = 'sw-history', LS_MUTE = 'sw-muted';
+
+  // ----- state -----
+  let options = loadJSON(LS_OPTS) || ['Pizza','Sushi','Tacos','Salad','Ramen','Burgers'];
+  let history = loadJSON(LS_HIST) || [];
+  let muted = localStorage.getItem(LS_MUTE) === '1';
+  let rotation = 0;            // degrees (any range; we mod when needed)
+  let spinning = false;
+  let animMode = null;         // 'easing' | 'friction' | null
+  let easingStart = 0, easingDuration = 0, easingFrom = 0, easingTo = 0;
+  let velocity = 0;            // deg per frame (for friction)
+  let dragging = false;
+  let dragStartPointer = 0, dragStartRotation = 0;
+  let dragSamples = [];
+  let lastTickSeg = -1;
+  let lastWinnerIdx = -1;
+  let pendingWinnerIdx = -1;   // set when easing has a predetermined target
+
+  const canvas = document.getElementById('wheel');
+  const ctx = canvas.getContext('2d');
+  const SIZE = 700, R = SIZE/2;
+  const optsEl = document.getElementById('opts');
+  const overlay = document.getElementById('overlay');
+  const spinBtn = document.getElementById('spinBtn');
+  const soundBtn = document.getElementById('soundBtn');
+  const pointer = document.getElementById('pointer');
+
+  soundBtn.textContent = muted ? '🔇' : '🔊';
+  soundBtn.classList.toggle('active', !muted);
+
+  // ----- localStorage helpers -----
+  function loadJSON(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+  function saveOptions() { localStorage.setItem(LS_OPTS, JSON.stringify(options)); }
+  function saveHistory() { localStorage.setItem(LS_HIST, JSON.stringify(history)); }
+
+  // ----- audio (Web Audio synth) -----
+  let audioCtx = null;
+  function getAudio() {
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch { return null; }
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function beep(freq, dur, type='sine', vol=0.1, slideTo=null) {
+    if (muted) return;
+    const a = getAudio(); if (!a) return;
+    const o = a.createOscillator(); const g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, a.currentTime);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(40, slideTo), a.currentTime + dur);
+    g.gain.setValueAtTime(vol, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
+    o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + dur);
+  }
+  const sfx = {
+    tick() { beep(1900, 0.025, 'square', 0.06); },
+    win() {
+      beep(660, 0.1, 'triangle', 0.16);
+      setTimeout(()=>beep(880, 0.1, 'triangle', 0.16), 100);
+      setTimeout(()=>beep(1320, 0.18, 'triangle', 0.18), 220);
+    }
+  };
+
+  // ----- drawing -----
+  function drawWheel() {
+    ctx.clearRect(0,0,SIZE,SIZE);
+    const n = options.length;
+    if (n === 0) {
+      ctx.fillStyle = '#221538'; ctx.beginPath(); ctx.arc(R,R,R,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#9b88c0'; ctx.font = '600 28px Fredoka, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('Add options →', R, R);
+      return;
+    }
+    if (n === 1) {
+      ctx.fillStyle = COLORS[0]; ctx.beginPath(); ctx.arc(R,R,R,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#1a0f2e'; ctx.font = '600 28px Fredoka, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(options[0].slice(0,18), R, R);
+      return;
+    }
+    const seg = (Math.PI*2)/n;
+    for (let i=0;i<n;i++) {
+      const start = i*seg - Math.PI/2;
+      const end = start + seg;
+      ctx.beginPath(); ctx.moveTo(R,R); ctx.arc(R,R,R,start,end); ctx.closePath();
+      ctx.fillStyle = COLORS[i % COLORS.length]; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 2; ctx.stroke();
+
+      // label
+      ctx.save();
+      ctx.translate(R,R); ctx.rotate(start + seg/2);
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#1a0f2e';
+      ctx.font = `600 ${n>14?20:n>9?24:28}px Fredoka, sans-serif`;
+      let label = options[i];
+      const maxLen = n > 12 ? 10 : 14;
+      if (label.length > maxLen) label = label.slice(0, maxLen-1) + '…';
+      ctx.fillText(label, R - 26, 0);
+      ctx.restore();
+    }
+    // soft inner ring
+    ctx.beginPath(); ctx.arc(R,R,R*0.96,0,Math.PI*2);
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 4; ctx.stroke();
+  }
+
+  function applyRotation() { canvas.style.transform = `rotate(${rotation}deg)`; }
+
+  // ----- editor list -----
+  function renderList() {
+    optsEl.innerHTML = '';
+    options.forEach((opt, i) => {
+      const div = document.createElement('div');
+      div.className = 'opt';
+      div.innerHTML = `<span class="dot" style="background:${COLORS[i%COLORS.length]}"></span>
+        <span class="label" title="Click to edit">${esc(opt)}</span>
+        <button class="del" title="Remove">×</button>`;
+      div.querySelector('.del').onclick = () => { options.splice(i,1); refresh(); };
+      div.querySelector('.label').onclick = () => editOption(i, div);
+      optsEl.appendChild(div);
+    });
+    document.getElementById('count').textContent = options.length;
+    spinBtn.disabled = options.length < 2 || spinning;
+  }
+  function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  function editOption(i, div) {
+    const lbl = div.querySelector('.label');
+    const input = document.createElement('input');
+    input.type = 'text'; input.className = 'edit'; input.value = options[i]; input.maxLength = 40;
+    lbl.replaceWith(input); input.focus(); input.select();
+    let finished = false;
+    const finish = save => {
+      if (finished) return; finished = true;
+      const v = input.value.trim();
+      if (save && v) { options[i] = v; refresh(); }
+      else refresh();
+    };
+    input.addEventListener('blur', () => finish(true));
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+  }
+
+  function refresh() { drawWheel(); renderList(); saveOptions(); syncTextarea(); }
+
+  // ----- textarea ⇄ options sync -----
+  const optInput = document.getElementById('optInput');
+  const savedTag = document.getElementById('savedTag');
+  let editingTextarea = false;
+  let textareaDebounce = null;
+  let savedTagTimer = null;
+
+  function syncTextarea() {
+    if (editingTextarea) return;
+    const next = options.join('\n');
+    if (optInput.value !== next) optInput.value = next;
+  }
+
+  function parseTextarea() {
+    const lines = optInput.value.split('\n').map(s => s.trim().slice(0, 40)).filter(Boolean);
+    if (sameArr(lines, options)) return;
+    options = lines;
+    drawWheel(); renderList(); saveOptions();
+    showSaved();
+  }
+
+  function sameArr(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+
+  function showSaved() {
+    savedTag.classList.add('show');
+    clearTimeout(savedTagTimer);
+    savedTagTimer = setTimeout(() => savedTag.classList.remove('show'), 900);
+  }
+
+  optInput.addEventListener('input', () => {
+    editingTextarea = true;
+    clearTimeout(textareaDebounce);
+    textareaDebounce = setTimeout(() => {
+      editingTextarea = false;
+      parseTextarea();
+    }, 280);
+  });
+  optInput.addEventListener('blur', () => {
+    editingTextarea = false;
+    clearTimeout(textareaDebounce);
+    parseTextarea();
+    syncTextarea(); // normalize (drop blanks/oversize)
+  });
+
+  // ----- history -----
+  function renderHistory() {
+    const el = document.getElementById('histList');
+    if (!history.length) {
+      el.innerHTML = '<div class="hist-empty">No spins yet.</div>';
+      return;
+    }
+    el.innerHTML = '';
+    history.forEach(h => {
+      const d = document.createElement('div');
+      d.className = 'hist-item';
+      d.innerHTML = `<span>${esc(h.name)}</span><span class="when">${relTime(h.t)}</span>`;
+      el.appendChild(d);
+    });
+  }
+  function relTime(t) {
+    const s = Math.floor((Date.now() - t)/1000);
+    if (s < 60) return `${s}s`;
+    if (s < 3600) return `${Math.floor(s/60)}m`;
+    if (s < 86400) return `${Math.floor(s/3600)}h`;
+    return `${Math.floor(s/86400)}d`;
+  }
+  function pushHistory(name) {
+    history.unshift({ name, t: Date.now() });
+    history = history.slice(0, 8);
+    saveHistory(); renderHistory();
+  }
+
+  // ----- spin animation (rAF) -----
+  function easeOutQuint(t) { return 1 - Math.pow(1 - t, 5); }
+
+  function startEasingSpin() {
+    if (spinning || options.length < 2) return;
+    spinning = true; spinBtn.disabled = true;
+    canvas.classList.add('spinning');
+
+    const n = options.length, seg = 360 / n;
+    const winnerIdx = Math.floor(Math.random() * n);
+    pendingWinnerIdx = winnerIdx;
+    const jitter = (Math.random() - 0.5) * seg * 0.7;
+    // Target: rotation where (i*seg + seg/2 + R) mod 360 = 0  =>  R mod 360 = (360 - winnerCenter) mod 360
+    const winnerCenter = winnerIdx * seg + seg/2;
+    const targetMod = ((360 - winnerCenter + jitter) % 360 + 360) % 360;
+    const currentMod = ((rotation % 360) + 360) % 360;
+    let delta = (targetMod - currentMod + 360) % 360;
+    const turns = 5 + Math.floor(Math.random() * 3);
+    easingFrom = rotation;
+    easingTo = rotation + turns * 360 + delta;
+    easingDuration = 4500;
+    easingStart = performance.now();
+    animMode = 'easing';
+    lastTickSeg = -1;
+    requestAnimationFrame(tick);
+  }
+
+  function tick(now) {
+    if (animMode === 'easing') {
+      const t = Math.min(1, (now - easingStart) / easingDuration);
+      rotation = easingFrom + (easingTo - easingFrom) * easeOutQuint(t);
+      applyRotation();
+      detectTick();
+      if (t >= 1) { animMode = null; finishSpin(pendingWinnerIdx); pendingWinnerIdx = -1; return; }
+      requestAnimationFrame(tick);
+    } else if (animMode === 'friction') {
+      rotation += velocity;
+      velocity *= 0.985;
+      applyRotation();
+      detectTick();
+      if (Math.abs(velocity) < 0.08) { animMode = null; finishSpin(getCurrentSegment()); return; }
+      requestAnimationFrame(tick);
+    }
+  }
+
+  function finishSpin() {
+    spinning = false; spinBtn.disabled = options.length < 2;
+    canvas.classList.remove('spinning');
+    const idx = getCurrentSegment();
+    if (idx >= 0) showWinner(idx);
+  }
+
+  function getCurrentSegment() {
+    const n = options.length; if (n === 0) return -1;
+    const seg = 360 / n;
+    const wheelAngle = ((360 - (rotation % 360)) % 360 + 360) % 360;
+    return Math.floor(wheelAngle / seg) % n;
+  }
+
+  function detectTick() {
+    const n = options.length; if (n === 0) return;
+    const seg = 360 / n;
+    const wheelAngle = ((360 - (rotation % 360)) % 360 + 360) % 360;
+    const idx = Math.floor(wheelAngle / seg) % n;
+    if (idx !== lastTickSeg) {
+      if (lastTickSeg !== -1) { sfx.tick(); wobblePointer(); }
+      lastTickSeg = idx;
+    }
+  }
+
+  function wobblePointer() {
+    pointer.animate(
+      [
+        { transform: 'translateX(-50%) rotate(0deg)' },
+        { transform: 'translateX(-50%) rotate(9deg)' },
+        { transform: 'translateX(-50%) rotate(0deg)' }
+      ],
+      { duration: 90, easing: 'ease-out' }
+    );
+  }
+
+  // ----- drag-to-spin -----
+  function pointerAngle(e) {
+    const rect = canvas.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top + rect.height/2;
+    return Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (spinning || options.length < 2) return;
+    dragging = true;
+    canvas.setPointerCapture(e.pointerId);
+    canvas.classList.add('grabbing');
+    dragStartPointer = pointerAngle(e);
+    dragStartRotation = rotation;
+    dragSamples = [{ t: performance.now(), r: rotation }];
+    lastTickSeg = getCurrentSegment();
+    getAudio(); // unlock audio on user gesture
+  });
+
+  canvas.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    let delta = pointerAngle(e) - dragStartPointer;
+    // unwrap delta to nearest continuous value
+    while (delta > 180) delta -= 360;
+    while (delta < -180) delta += 360;
+    rotation = dragStartRotation + delta;
+    applyRotation();
+    detectTick();
+    const now = performance.now();
+    dragSamples.push({ t: now, r: rotation });
+    while (dragSamples.length > 8) dragSamples.shift();
+  });
+
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    canvas.classList.remove('grabbing');
+    try { canvas.releasePointerCapture(e.pointerId); } catch {}
+    // compute velocity from recent samples (deg per frame at ~60fps)
+    if (dragSamples.length >= 2) {
+      const first = dragSamples[0], last = dragSamples[dragSamples.length - 1];
+      const dt = last.t - first.t;
+      const dr = last.r - first.r;
+      if (dt > 0) velocity = (dr / dt) * 16; // 16ms per frame
+    }
+    if (Math.abs(velocity) > 1.5) {
+      spinning = true; spinBtn.disabled = true;
+      canvas.classList.add('spinning');
+      animMode = 'friction';
+      requestAnimationFrame(tick);
+    }
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
+  // ----- winner -----
+  function showWinner(idx) {
+    lastWinnerIdx = idx;
+    document.getElementById('winnerText').textContent = options[idx];
+    overlay.classList.add('show');
+    pushHistory(options[idx]);
+    sfx.win();
+    fireConfetti();
+  }
+
+  // ----- editor events -----
+  spinBtn.onclick = startEasingSpin;
+  document.getElementById('hub').onclick = startEasingSpin;
+  document.getElementById('spinAgain').onclick = () => { overlay.classList.remove('show'); setTimeout(startEasingSpin, 250); };
+  document.getElementById('removeWinner').onclick = () => {
+    if (lastWinnerIdx >= 0) { options.splice(lastWinnerIdx,1); refresh(); }
+    overlay.classList.remove('show');
+  };
+  overlay.onclick = e => { if (e.target === overlay) overlay.classList.remove('show'); };
+  document.querySelectorAll('[data-preset]').forEach(b => {
+    b.onclick = () => {
+      if (spinning) return;
+      options = [...PRESETS[b.dataset.preset]];
+      rotation = 0; applyRotation(); refresh();
+    };
+  });
+  document.getElementById('shuffleBtn').onclick = () => {
+    if (spinning) return;
+    for (let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [options[i], options[j]] = [options[j], options[i]];
+    }
+    refresh();
+  };
+  document.getElementById('clearBtn').onclick = () => {
+    if (spinning) return;
+    if (!options.length || confirm('Clear all options?')) { options = []; refresh(); }
+  };
+  document.getElementById('clearHist').onclick = () => { history = []; saveHistory(); renderHistory(); };
+  soundBtn.onclick = () => {
+    muted = !muted;
+    localStorage.setItem(LS_MUTE, muted ? '1' : '0');
+    soundBtn.textContent = muted ? '🔇' : '🔊';
+    soundBtn.classList.toggle('active', !muted);
+    if (!muted) { getAudio(); sfx.tick(); }
+  };
+
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.code === 'Space') { e.preventDefault(); if (!spinning) startEasingSpin(); }
+    else if (e.key.toLowerCase() === 'm') soundBtn.click();
+    else if (e.key.toLowerCase() === 's' && !spinning) document.getElementById('shuffleBtn').click();
+  });
+
+  // ----- confetti -----
+  const cc = document.getElementById('confetti');
+  const cctx = cc.getContext('2d');
+  let confetti = [];
+  let confettiRunning = false;
+  function resizeCC(){ cc.width=innerWidth; cc.height=innerHeight; }
+  resizeCC(); addEventListener('resize', resizeCC);
+  function fireConfetti() {
+    // origin near top of the wheel
+    const rect = canvas.getBoundingClientRect();
+    const ox = rect.left + rect.width / 2;
+    const oy = rect.top + 10;
+    confetti = [];
+    for (let i=0;i<140;i++) {
+      const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI * 0.9;
+      const speed = 8 + Math.random() * 12;
+      confetti.push({
+        x: ox, y: oy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 6+Math.random()*8, color: COLORS[i%COLORS.length],
+        rot: Math.random()*360, vr: (Math.random()-0.5)*20, life: 1
+      });
+    }
+    if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(animateCC); }
+  }
+  function animateCC() {
+    cctx.clearRect(0,0,cc.width,cc.height);
+    confetti.forEach(p => {
+      p.vy += 0.4; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.rot += p.vr; p.life -= 0.008;
+      cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot*Math.PI/180);
+      cctx.globalAlpha = Math.max(0,p.life); cctx.fillStyle = p.color;
+      cctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6); cctx.restore();
+    });
+    confetti = confetti.filter(p => p.life > 0 && p.y < cc.height+40);
+    if (confetti.length) requestAnimationFrame(animateCC);
+    else { confettiRunning = false; cctx.clearRect(0,0,cc.width,cc.height); }
+  }
+
+  // ----- relative time refresh -----
+  setInterval(() => { if (history.length) renderHistory(); }, 30000);
+
+  // ----- init -----
+  refresh();
+  renderHistory();
+})();
+</script>
+</body>
+</html>
