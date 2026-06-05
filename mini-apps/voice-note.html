@@ -192,6 +192,16 @@
     font-size: 0.84rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all 0.25s; z-index: 100;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 520px) {
+    body { padding: 18px 12px 30px; gap: 14px; }
+    .mic-bar { flex-wrap: wrap; padding: 14px; gap: 12px; }
+    .mic-btn { width: 52px; height: 52px; font-size: 1.4rem; }
+    .mic-info { flex: 1 1 calc(100% - 64px); min-width: 0; }
+    .lang-select { flex: 1 1 100%; max-width: none; }
+    .toolbar button { padding: 8px 12px; font-size: 0.76rem; }
+    .toolbar .voice-select { max-width: 100%; flex: 1 1 100%; }
+  }
 </style>
 </head>
 <body>

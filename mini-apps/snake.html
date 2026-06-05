@@ -78,6 +78,13 @@
   .hint { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.05em; text-align: center; }
   .dpad-hint { display: none; }
   @media (hover: none) { .dpad-hint { display: block; } .kbd-hint { display: none; } }
+  @media (max-width: 480px) {
+    body { padding: 14px 12px; gap: 12px; }
+    .scorebar { gap: 8px; }
+    .stat { min-width: 0; padding: 7px 12px; flex: 1 1 auto; }
+    .stat .val { font-size: 1.2rem; }
+    .stat.mode .val { font-size: 0.82rem; }
+  }
 </style>
 </head>
 <body>

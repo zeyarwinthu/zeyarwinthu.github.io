@@ -36,7 +36,7 @@
   .harmony button.active { background: var(--accent); color: #fff; }
   .harmony button:hover:not(.active) { color: var(--ink); }
 
-  .actions { display: flex; gap: 6px; align-items: center; }
+  .actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .actions button {
     background: var(--bg); border: 1px solid var(--edge); color: var(--ink);
     height: 34px; padding: 0 12px; border-radius: 9px; cursor: pointer; font-family: inherit;
@@ -125,6 +125,16 @@
     padding: 1px 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--ink);
   }
   .footer-hint .sep { opacity: 0.4; margin: 0 5px; }
+
+  @media (max-width: 560px) {
+    .topbar { padding: 10px 12px; gap: 8px; }
+    .logo { margin-right: 0; }
+    .harmony { width: 100%; justify-content: flex-start; }
+    .harmony button { padding: 5px 8px; font-size: 0.7rem; }
+    .actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+    .actions button { font-size: 0.74rem; padding: 0 10px; height: 32px; }
+    .actions .icon-only { width: 32px; padding: 0; }
+  }
 
   /* ---- Modal ---- */
   .overlay {

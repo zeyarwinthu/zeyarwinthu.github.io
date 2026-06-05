@@ -22,11 +22,11 @@
     justify-content: center; gap: 18px; padding: 18px;
   }
 
-  .header { width: min(92vw, 440px); display: flex; align-items: center; gap: 10px; }
-  .title { font-weight: 900; font-size: clamp(2.2rem, 8vw, 3.2rem); letter-spacing: -0.03em; line-height: 1; margin-right: auto; }
+  .header { width: min(92vw, 440px); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .title { font-weight: 900; font-size: clamp(2rem, 7vw, 3.2rem); letter-spacing: -0.03em; line-height: 1; margin-right: auto; }
   .title span { color: var(--accent); }
   .score-box {
-    background: var(--board); border-radius: 12px; padding: 8px 16px; text-align: center; min-width: 80px;
+    background: var(--board); border-radius: 12px; padding: 8px 14px; text-align: center; min-width: 68px;
     position: relative;
   }
   .score-box .lbl { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
@@ -47,7 +47,7 @@
     100% { opacity: 0; transform: translate(-50%, -34px); }
   }
 
-  .toolbar { width: min(92vw, 440px); display: flex; align-items: center; gap: 10px; }
+  .toolbar { width: min(92vw, 440px); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .toolbar .blurb { font-size: 0.82rem; color: var(--muted); margin-right: auto; line-height: 1.4; }
   .toolbar .blurb b { color: var(--ink); }
   .btn {
@@ -103,6 +103,19 @@
   .overlay h2.win { color: var(--accent); }
   .overlay p { color: var(--muted); font-size: 0.9rem; }
   .overlay .ov-btns { display: flex; gap: 10px; }
+
+  @media (max-width: 480px) {
+    body { padding: 14px 10px; gap: 12px; justify-content: flex-start; padding-top: 20px; align-items: stretch; }
+    .header { width: 100%; gap: 8px; }
+    .toolbar { width: 100%; }
+    .board-wrap { width: 100%; max-width: calc(100vw - 20px); align-self: center; }
+    .title { font-size: 1.9rem; }
+    .score-box { padding: 6px 10px; min-width: 56px; flex-shrink: 0; }
+    .score-box .val { font-size: 1.2rem; }
+    .score-box .lbl { font-size: 0.55rem; }
+    .btn { padding: 8px 12px; font-size: 0.8rem; }
+    .toolbar .blurb { font-size: 0.74rem; }
+  }
 </style>
 </head>
 <body>
