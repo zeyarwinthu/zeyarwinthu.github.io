@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Ball Jump</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#12101c; --bg2:#0a0812; --ink:#fff; --muted:#8b82a8; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; touch-action:manipulation; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    background: radial-gradient(circle at 50% 0%, #221a3a 0%, var(--bg2) 65%);
+    color: var(--ink); font-family:'Fredoka',sans-serif;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:14px; gap:12px;
+  }
+  h1 { font-weight:700; font-size:clamp(1.4rem,5vw,1.9rem); letter-spacing:-0.01em; text-align:center; }
+  h1 .a{color:#ff5c8a;} h1 .b{color:#5ec8e8;} h1 .c{color:#ffd166;}
+
+  .game-wrap { position:relative; }
+  canvas { border-radius:20px; display:block; box-shadow:0 24px 60px -18px rgba(0,0,0,0.7); cursor:pointer; }
+
+  .live-score {
+    position:absolute; top:18px; left:50%; transform:translateX(-50%);
+    font-family:'JetBrains Mono',monospace; font-weight:700; font-size:2.4rem;
+    text-shadow:0 3px 0 rgba(0,0,0,0.3); pointer-events:none; z-index:3; opacity:0; transition:opacity 0.2s;
+  }
+  .live-score.show { opacity:1; }
+
+  .overlay {
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; text-align:center; border-radius:20px; padding:24px; transition:opacity 0.25s;
+  }
+  .overlay.hidden { opacity:0; pointer-events:none; }
+  .overlay h2 { font-weight:700; font-size:1.9rem; text-shadow:0 2px 0 rgba(0,0,0,0.25); }
+  .overlay p { font-size:0.86rem; color:var(--muted); line-height:1.5; max-width:240px; }
+  .scorecard {
+    background: rgba(255,255,255,0.06); backdrop-filter:blur(6px); border-radius:16px;
+    padding:14px 26px; font-family:'JetBrains Mono',monospace; display:flex; gap:26px;
+  }
+  .scorecard .lbl{font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;opacity:0.7;}
+  .scorecard .num{font-size:1.8rem;}
+  .scorecard .num.best{color:#ffd166;}
+  .btn {
+    background:#ff5c8a; color:#fff; border:none; border-radius:14px; padding:13px 40px;
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:1.1rem; cursor:pointer;
+    transition:transform 0.12s; box-shadow:0 5px 0 #c9396a;
+  }
+  .btn:hover{transform:translateY(-1px);} .btn:active{transform:translateY(3px);box-shadow:0 2px 0 #c9396a;}
+  .hint { font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--muted); opacity:0.7; }
+</style>
+</head>
+<body>
+  <h1><span class="a">Color</span> <span class="b">Ball</span> <span class="c">Jump</span></h1>
+
+  <div class="game-wrap">
+    <canvas id="game"></canvas>
+    <div class="live-score" id="liveScore">0</div>
+
+    <div class="overlay" id="startOverlay">
+      <h2>🎯 Match the Color</h2>
+      <p>A ball drops toward the spinning ring. Rotate the ring so the matching color is at the bottom — let the ball pass through it. Wrong color = game over. The ball changes color after every pass!</p>
+      <button class="btn" id="startBtn">Play</button>
+      <div class="hint">Tap LEFT / RIGHT side (or ← →) to spin</div>
+    </div>
+
+    <div class="overlay hidden" id="overOverlay" style="background:rgba(10,8,18,0.6)">
+      <h2>Game Over</h2>
+      <div class="scorecard">
+        <div><div class="lbl">Score</div><div class="num" id="finalScore">0</div></div>
+        <div><div class="lbl">Best</div><div class="num best" id="bestScore">0</div></div>
+      </div>
+      <button class="btn" id="retryBtn">Play Again</button>
+    </div>
+  </div>
+
+  <div class="hint">Tap left/right or use ← → arrows</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const liveScore = document.getElementById('liveScore');
+
+  let W, H;
+  function size() {
+    const maxH = Math.min(window.innerHeight - 150, 640);
+    const maxW = Math.min(window.innerWidth - 28, 400);
+    let h = maxH, w = h*0.7;
+    if (w > maxW) { w = maxW; h = w/0.7; }
+    W = canvas.width = Math.round(w);
+    H = canvas.height = Math.round(h);
+  }
+  size();
+  window.addEventListener('resize', () => { size(); if (state!=='play') drawStatic(); });
+
+  // ---- Colors (the palette the ring segments + ball use) ----
+  const COLORS = ['#ff5c8a', '#5ec8e8', '#ffd166', '#5ee0a8']; // pink, blue, yellow, green
+  const SEGMENTS = COLORS.length; // 4 segments around the ring
+
+  // ---- State ----
+  let state = 'menu'; // menu | play | over
+  let ring, ball, score, best = 0, particles = [];
+
+  function reset() {
+    // ring is centered, lower third of screen
+    ring = {
+      cx: W/2, cy: H*0.66, rOuter: W*0.34, rInner: W*0.22,
+      angle: 0,            // current rotation (radians)
+      targetAngle: 0,      // where we're rotating toward
+      // randomize segment color order each game
+      colors: shuffle([...COLORS])
+    };
+    ball = spawnBall();
+    score = 0;
+    particles = [];
+    liveScore.textContent = '0';
+  }
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+  function spawnBall() {
+    const colorIdx = (Math.random()*SEGMENTS)|0;
+    return {
+      x: W/2, y: H*0.12, r: W*0.045,
+      color: ring.colors[colorIdx],
+      vy: H*0.004,            // fall speed
+      passed: false
+    };
+  }
+
+  // The ring has SEGMENTS equal wedges. The "active" segment is the one at the BOTTOM
+  // (pointing toward where the ball enters the ring from above... actually ball falls onto
+  // the top, passes through center). We treat the bottom-facing segment as the gate.
+  // Segment index at a given screen angle:
+  const SEG = (Math.PI*2)/SEGMENTS;
+
+  // Which segment color is currently at the TOP (where the ball hits the ring)?
+  // Wedges are drawn centered (offset -SEG/2), so wedge i's center is at
+  // angle (i*SEG + ring.angle - PI/2). The gate is the wedge whose center is
+  // nearest the top (-PI/2). This matches the drawing exactly and has no
+  // boundary ambiguity because at rest a wedge center sits under the marker.
+  function topSegmentColor() {
+    const top = -Math.PI/2;
+    let best = 0, bestD = Infinity;
+    for (let i=0;i<SEGMENTS;i++) {
+      const center = i*SEG + ring.angle - Math.PI/2;
+      let d = ((center - top) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+      d = Math.min(d, Math.PI*2 - d);
+      if (d < bestD - 1e-9) { bestD = d; best = i; }
+    }
+    return ring.colors[best];
+  }
+
+  // ---- Input: rotate ring by one segment ----
+  function rotate(dir) {
+    if (state === 'menu') { start(); return; }
+    if (state !== 'play') return;
+    ring.targetAngle += dir * SEG;
+  }
+
+  // ---- Update ----
+  function update() {
+    // smooth ring rotation toward target
+    const diff = ring.targetAngle - ring.angle;
+    ring.angle += diff * 0.25;
+    if (Math.abs(diff) < 0.001) ring.angle = ring.targetAngle;
+
+    // ball falls
+    ball.y += ball.vy;
+
+    // when ball reaches the ring's top edge, judge the color
+    const hitY = ring.cy - ring.rOuter;
+    if (!ball.passed && ball.y + ball.r >= hitY) {
+      const gate = topSegmentColor();
+      if (gate === ball.color) {
+        // pass! score, burst, respawn with new color
+        ball.passed = true;
+        score++;
+        liveScore.textContent = score;
+        burst(ball.x, hitY, ball.color);
+        // speed up slightly
+        setTimeout(()=>{}, 0);
+        ball = spawnBall();
+        ball.vy = H*0.004 + score*H*0.00006; // gradually faster
+      } else {
+        return gameOver();
+      }
+    }
+
+    // particles
+    particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vy+=0.3; p.life-=0.03; });
+    particles = particles.filter(p => p.life > 0);
+  }
+
+  function burst(x,y,color) {
+    for (let i=0;i<16;i++) {
+      const a = Math.random()*Math.PI*2, s = 2+Math.random()*5;
+      particles.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s - 2, r:2+Math.random()*3, color, life:1 });
+    }
+  }
+
+  // ---- Render ----
+  function drawBackground() {
+    ctx.clearRect(0,0,W,H);
+    // faint guide line from ball down to ring
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 2; ctx.setLineDash([6,8]);
+    ctx.beginPath(); ctx.moveTo(W/2, 0); ctx.lineTo(W/2, ring.cy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawRing() {
+    const { cx, cy, rOuter, rInner, angle } = ring;
+    for (let i=0;i<SEGMENTS;i++) {
+      // offset by -SEG/2 so a wedge sits CENTERED at the top (under the marker) at rest
+      const start = i*SEG + angle - Math.PI/2 - SEG/2;
+      const end = start + SEG;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter, start, end);
+      ctx.arc(cx, cy, rInner, end, start, true);
+      ctx.closePath();
+      ctx.fillStyle = ring.colors[i];
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    // top marker (where the ball will hit) — a small notch/arrow pointing down at the top of the ring
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - rOuter - 4);
+    ctx.lineTo(cx - 9, cy - rOuter - 18);
+    ctx.lineTo(cx + 9, cy - rOuter - 18);
+    ctx.closePath();
+    ctx.fill();
+    // inner hole
+    ctx.fillStyle = 'rgba(10,8,18,0.9)';
+    ctx.beginPath(); ctx.arc(cx, cy, rInner, 0, Math.PI*2); ctx.fill();
+    // show the currently-armed gate color in the hub
+    ctx.fillStyle = topSegmentColor();
+    ctx.beginPath(); ctx.arc(cx, cy, rInner*0.5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.font = `600 ${rInner*0.28}px Fredoka, sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('GATE', cx, cy + rInner*0.78);
+  }
+
+  function drawBall() {
+    ctx.save();
+    // glow
+    ctx.shadowBlur = 18; ctx.shadowColor = ball.color;
+    ctx.fillStyle = ball.color;
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+    ctx.shadowBlur = 0;
+    // shine
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.arc(ball.x - ball.r*0.3, ball.y - ball.r*0.3, ball.r*0.3, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawParticles() {
+    particles.forEach(p => {
+      ctx.globalAlpha = Math.max(0,p.life);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function render() {
+    drawBackground();
+    drawRing();
+    drawParticles();
+    drawBall();
+  }
+  function drawStatic() { reset(); render(); }
+
+  function loop() {
+    if (state === 'play') { update(); if (state==='play') render(); }
+    requestAnimationFrame(loop);
+  }
+
+  // ---- Flow ----
+  function start() {
+    reset(); state = 'play';
+    document.getElementById('startOverlay').classList.add('hidden');
+    document.getElementById('overOverlay').classList.add('hidden');
+    liveScore.classList.add('show');
+  }
+  function gameOver() {
+    if (state !== 'play') return;
+    state = 'over';
+    if (score > best) best = score;
+    liveScore.classList.remove('show');
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('bestScore').textContent = best;
+    burst(ball.x, ball.y, ball.color);
+    ctx.fillStyle='rgba(255,80,80,0.45)'; ctx.fillRect(0,0,W,H);
+    setTimeout(()=>document.getElementById('overOverlay').classList.remove('hidden'), 250);
+  }
+
+  // ---- Input wiring ----
+  function tap(e) {
+    e.preventDefault();
+    if (state === 'menu') { start(); return; }
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    rotate(x < rect.width/2 ? -1 : 1);
+  }
+  canvas.addEventListener('mousedown', tap);
+  canvas.addEventListener('touchstart', tap, {passive:false});
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') { e.preventDefault(); rotate(-1); }
+    else if (e.key === 'ArrowRight' || e.key === 'd') { e.preventDefault(); rotate(1); }
+    else if (e.key === ' ') { e.preventDefault(); if (state!=='play') start(); }
+  });
+  document.getElementById('startBtn').onclick = start;
+  document.getElementById('retryBtn').onclick = start;
+
+  drawStatic();
+  loop();
+})();
+</script>
+</body>
+</html>
