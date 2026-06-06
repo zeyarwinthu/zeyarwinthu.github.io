@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Converter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #14110f;
+    --panel: #1c1815;
+    --panel-2: #221d19;
+    --ink: #e8e1d6;
+    --ink-dim: #9c9388;
+    --line: #322c26;
+    --accent: #d49a5a;
+    --accent-soft: rgba(212, 154, 90, 0.14);
+    --green: #8fb573;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { min-height: 100%; }
+
+  body {
+    background:
+      radial-gradient(1000px 600px at 50% -15%, rgba(212,154,90,0.08), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    padding-bottom: 50px;
+  }
+
+  header { text-align: center; padding: 30px 20px 6px; }
+  header h1 {
+    font-family: 'Fraunces', serif; font-weight: 600; font-size: 2rem; letter-spacing: -0.01em;
+  }
+  header h1 .dot { color: var(--accent); }
+  header .sub {
+    font-family: 'Fraunces', serif; font-style: italic; color: var(--ink-dim);
+    font-size: 1rem; margin-top: 4px;
+  }
+  .now-clock {
+    margin-top: 14px; font-size: 0.78rem; letter-spacing: 0.06em; color: var(--ink-dim);
+  }
+  .now-clock b { color: var(--accent); font-weight: 500; }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 22px; display: flex; flex-direction: column; gap: 22px; }
+
+  /* Direction switch */
+  .dir-switch { display: flex; justify-content: center; }
+  .dir-switch .seg {
+    display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  }
+  .dir-switch button {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--ink); background: var(--panel-2);
+    border: none; padding: 11px 22px; cursor: pointer; transition: all 0.18s ease;
+  }
+  .dir-switch button.active { background: var(--accent-soft); color: var(--accent); }
+  .dir-switch button:not(.active):hover { background: var(--panel); color: var(--ink); }
+
+  .panel {
+    background: linear-gradient(180deg, var(--panel), var(--bg));
+    border: 1px solid var(--line); border-radius: 14px; padding: 24px 26px;
+  }
+  .panel h2 {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--ink-dim); margin-bottom: 16px; font-weight: 500;
+  }
+
+  .input-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-dim);
+  }
+  input[type="datetime-local"], select {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--ink);
+    background: var(--panel-2); border: 1px solid var(--line); padding: 11px 13px;
+    border-radius: 9px; outline: none; transition: border-color 0.18s ease;
+    color-scheme: dark;
+  }
+  input[type="datetime-local"]:focus, select:focus { border-color: var(--accent); }
+  select { min-width: 240px; }
+  #srcZoneField { display: none; }
+
+  button.act {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--ink); background: var(--panel-2);
+    border: 1px solid var(--line); padding: 11px 18px; border-radius: 9px; cursor: pointer;
+    transition: all 0.18s ease; height: fit-content;
+  }
+  button.act:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+  button.act:active { transform: translateY(1px); }
+  button.act.primary { border-color: var(--accent); color: var(--accent); }
+
+  /* Paste-a-string row */
+  .paste-row {
+    margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line);
+    display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+  }
+  .paste-row .field { flex: 1; min-width: 280px; }
+  input[type="text"].paste {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--ink);
+    background: var(--panel-2); border: 1px solid var(--line); padding: 11px 13px;
+    border-radius: 9px; outline: none; transition: border-color 0.18s ease; width: 100%;
+  }
+  input[type="text"].paste:focus { border-color: var(--accent); }
+  input[type="text"].paste::placeholder { color: var(--ink-dim); font-style: italic; font-size: 0.78rem; }
+  .paste-hint {
+    margin-top: 10px; font-size: 0.74rem; color: var(--ink-dim); letter-spacing: 0.02em;
+    font-style: italic; font-family: 'Fraunces', serif; line-height: 1.7;
+  }
+  .paste-hint code {
+    background: var(--panel-2); border: 1px solid var(--line); padding: 1px 6px;
+    border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-style: normal;
+    font-size: 0.7rem; color: var(--ink); margin: 0 2px;
+  }
+
+  .source-utc {
+    margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line);
+    font-size: 0.82rem; color: var(--ink-dim); letter-spacing: 0.03em;
+  }
+  .source-utc b { color: var(--accent); font-weight: 500; font-family: 'Fraunces', serif; font-size: 1.1rem; }
+
+  /* Results */
+  .results { display: flex; flex-direction: column; }
+  .zone-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 15px 4px; border-bottom: 1px solid var(--line);
+    animation: fade 0.3s ease both;
+  }
+  .zone-row:last-child { border-bottom: none; }
+  .zone-row.highlight { background: var(--accent-soft); border-radius: 8px; padding-left: 12px; padding-right: 12px; }
+  .zone-meta { display: flex; flex-direction: column; gap: 3px; }
+  .zone-name { font-size: 0.92rem; color: var(--ink); }
+  .zone-sub { font-size: 0.66rem; color: var(--ink-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+  .zone-time { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+  .zone-time .t {
+    font-family: 'Fraunces', serif; font-size: 1.42rem; font-weight: 600; letter-spacing: -0.01em;
+  }
+  .zone-time .d { font-size: 0.68rem; color: var(--ink-dim); letter-spacing: 0.04em; }
+  .zone-time .day-diff { color: var(--accent); }
+  .copy-zone {
+    margin-left: 16px; opacity: 0; transition: opacity 0.18s;
+    background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 6px 10px; border-radius: 6px; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+  }
+  .zone-row:hover .copy-zone { opacity: 1; }
+  .copy-zone:hover { border-color: var(--accent); color: var(--accent); }
+
+  @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+  .zone-picker { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+  .empty-state { color: var(--ink-dim); font-style: italic; font-family: 'Fraunces', serif; text-align: center; padding: 20px 0; }
+
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--panel-2); border: 1px solid var(--accent); color: var(--accent);
+    padding: 10px 20px; border-radius: 8px; font-size: 0.72rem; letter-spacing: 0.06em;
+    opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 20;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Time Converter<span class="dot">.</span></h1>
+    <div class="sub">UTC, both directions</div>
+    <div class="now-clock" id="nowClock"></div>
+  </header>
+
+  <div class="wrap">
+    <div class="dir-switch">
+      <div class="seg">
+        <button id="dirU2O" class="active">UTC &rarr; Zones</button>
+        <button id="dirO2U">Zone &rarr; UTC</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 id="inputTitle">Input time (UTC)</h2>
+      <div class="input-row">
+        <div class="field">
+          <label id="dtLabel">Date &amp; time (UTC)</label>
+          <input type="datetime-local" id="dt" step="60">
+        </div>
+        <div class="field" id="srcZoneField">
+          <label>Source timezone</label>
+          <select id="srcZone"></select>
+        </div>
+        <button class="act" id="nowBtn">Use now</button>
+        <button class="act primary" id="convertBtn">Convert</button>
+      </div>
+
+      <div class="paste-row">
+        <div class="field">
+          <label>Or paste a date/time string</label>
+          <input type="text" class="paste" id="pasteInput" placeholder="e.g.  2026-06-06T14:30:00Z   ·   2026-06-06 14:30 JST   ·   1717684200   ·   Jun 6, 2026 14:30 +05:30" spellcheck="false" autocomplete="off">
+        </div>
+        <button class="act" id="parseBtn">Parse</button>
+      </div>
+      <div class="paste-hint">
+        Accepts ISO 8601 (with <code>Z</code> or <code>+09:00</code>), epoch in seconds or milliseconds,
+        named offsets like <code>UTC</code> <code>JST</code> <code>PST</code> <code>IST</code> <code>CET</code>,
+        or plain <code>YYYY-MM-DD HH:MM</code> — defaults to your selected source zone when no offset is given.
+      </div>
+
+      <div class="source-utc" id="sourceUtc"></div>
+    </div>
+
+    <div class="panel">
+      <h2 id="resultsTitle">Converted times</h2>
+      <div class="results" id="results">
+        <div class="empty-state">Pick a time and press Convert.</div>
+      </div>
+      <div class="zone-picker">
+        <select id="addZone"></select>
+        <button class="act" id="addBtn">Add zone</button>
+        <button class="act" id="resetBtn">Reset list</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const toast = $('toast');
+  function showToast(m){ toast.textContent = m; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1500); }
+
+  // Curated timezone list (IANA)
+  const ALL_ZONES = [
+    ['Pacific/Honolulu','Honolulu'],
+    ['America/Anchorage','Anchorage'],
+    ['America/Los_Angeles','Los Angeles'],
+    ['America/Denver','Denver'],
+    ['America/Chicago','Chicago'],
+    ['America/New_York','New York'],
+    ['America/Sao_Paulo','S\u00e3o Paulo'],
+    ['Etc/UTC','UTC'],
+    ['Europe/London','London'],
+    ['Europe/Paris','Paris'],
+    ['Europe/Berlin','Berlin'],
+    ['Europe/Athens','Athens'],
+    ['Europe/Moscow','Moscow'],
+    ['Asia/Dubai','Dubai'],
+    ['Asia/Karachi','Karachi'],
+    ['Asia/Kolkata','Kolkata'],
+    ['Asia/Yangon','Yangon'],
+    ['Asia/Bangkok','Bangkok'],
+    ['Asia/Singapore','Singapore'],
+    ['Asia/Shanghai','Shanghai'],
+    ['Asia/Tokyo','Tokyo'],
+    ['Asia/Seoul','Seoul'],
+    ['Australia/Sydney','Sydney'],
+    ['Pacific/Auckland','Auckland'],
+  ];
+  // Default displayed set
+  const DEFAULT_ZONES = ['America/Los_Angeles','America/New_York','Etc/UTC','Europe/London','Europe/Paris','Asia/Yangon','Asia/Tokyo','Australia/Sydney'];
+
+  let direction = 'u2o'; // u2o = UTC->others, o2u = others->UTC
+  let displayZones = [...DEFAULT_ZONES];
+  let localZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (!ALL_ZONES.find(z => z[0] === localZone)) {
+    // ensure user's local zone is selectable
+    ALL_ZONES.push([localZone, 'Local (' + localZone + ')']);
+  }
+
+  // Populate selects
+  function fillSelect(sel, selected) {
+    sel.innerHTML = '';
+    ALL_ZONES.forEach(([id, label]) => {
+      const o = document.createElement('option');
+      o.value = id; o.textContent = label + '  (' + offsetLabel(id, new Date()) + ')';
+      if (id === selected) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+
+  // Get offset string like "UTC+9" for a zone at a given instant
+  function offsetLabel(zone, date) {
+    try {
+      const dtf = new Intl.DateTimeFormat('en-US', { timeZone: zone, timeZoneName: 'shortOffset', hour: 'numeric' });
+      const parts = dtf.formatToParts(date);
+      const tn = parts.find(p => p.type === 'timeZoneName');
+      return tn ? tn.value.replace('GMT','UTC') : 'UTC';
+    } catch { return ''; }
+  }
+
+  // Compute the UTC ms for a wall-clock time interpreted in a given zone
+  function zonedWallTimeToUTC(y, mo, d, h, mi, zone) {
+    // Make a guess in UTC, then correct by the zone's offset at that instant
+    const guess = Date.UTC(y, mo - 1, d, h, mi, 0);
+    const asZoned = new Date(guess);
+    const offsetMin = getOffsetMinutes(zone, asZoned);
+    // wall = utc + offset  =>  utc = wall - offset
+    let utc = guess - offsetMin * 60000;
+    // refine once (handles DST edges)
+    const offset2 = getOffsetMinutes(zone, new Date(utc));
+    if (offset2 !== offsetMin) utc = guess - offset2 * 60000;
+    return utc;
+  }
+
+  // Offset in minutes for a zone at a specific instant (date is a real instant)
+  function getOffsetMinutes(zone, date) {
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: zone, hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const parts = dtf.formatToParts(date).reduce((a,p)=>{ a[p.type]=p.value; return a; }, {});
+    const asUTC = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    return Math.round((asUTC - date.getTime()) / 60000);
+  }
+
+  function fmtTime(instant, zone) {
+    const dtf = new Intl.DateTimeFormat('en-GB', {
+      timeZone: zone, hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    return dtf.format(instant);
+  }
+  function fmtDate(instant, zone) {
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: zone, weekday: 'short', month: 'short', day: 'numeric'
+    });
+    return dtf.format(instant);
+  }
+  function dayKey(instant, zone) {
+    const dtf = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year:'numeric', month:'2-digit', day:'2-digit' });
+    return dtf.format(instant);
+  }
+
+  // Get the chosen instant (a real Date) from the inputs
+  function getInstant() {
+    const v = $('dt').value;
+    if (!v) return null;
+    const [datePart, timePart] = v.split('T');
+    const [y, mo, d] = datePart.split('-').map(Number);
+    const [h, mi] = timePart.split(':').map(Number);
+    if (direction === 'u2o') {
+      // input is UTC wall time
+      return new Date(Date.UTC(y, mo - 1, d, h, mi, 0));
+    } else {
+      // input is in source zone
+      const zone = $('srcZone').value;
+      return new Date(zonedWallTimeToUTC(y, mo, d, h, mi, zone));
+    }
+  }
+
+  function renderResults() {
+    const instant = getInstant();
+    const results = $('results');
+    if (!instant || isNaN(instant.getTime())) {
+      results.innerHTML = '<div class="empty-state">Pick a time and press Convert.</div>';
+      $('sourceUtc').innerHTML = '';
+      return;
+    }
+
+    // Source UTC summary
+    const utcStr = new Intl.DateTimeFormat('en-GB', {
+      timeZone:'Etc/UTC', weekday:'short', year:'numeric', month:'short', day:'numeric',
+      hour:'2-digit', minute:'2-digit', hour12:false
+    }).format(instant);
+    $('sourceUtc').innerHTML = 'Instant in UTC: <b>' + utcStr + '</b> &nbsp;\u00b7&nbsp; ISO: ' +
+      instant.toISOString().slice(0,16) + 'Z &nbsp;\u00b7&nbsp; epoch ' + Math.floor(instant.getTime()/1000);
+
+    // Reference day = UTC day of the instant, to compute +1/-1 day labels
+    const refDay = dayKey(instant, 'Etc/UTC');
+
+    if (direction === 'o2u') {
+      // Show single big UTC result + the displayZones too for context
+      results.innerHTML = '';
+      const zonesToShow = ['Etc/UTC', ...displayZones.filter(z => z !== 'Etc/UTC')];
+      zonesToShow.forEach((zone, i) => addZoneRow(results, zone, instant, refDay, i, zone === 'Etc/UTC'));
+    } else {
+      results.innerHTML = '';
+      displayZones.forEach((zone, i) => addZoneRow(results, zone, instant, refDay, i, zone === 'Etc/UTC'));
+    }
+  }
+
+  function addZoneRow(container, zone, instant, refDay, i, highlight) {
+    const label = (ALL_ZONES.find(z => z[0] === zone) || [zone, zone])[1];
+    const t = fmtTime(instant, zone);
+    const d = fmtDate(instant, zone);
+    const off = offsetLabel(zone, instant);
+
+    // day difference vs UTC reference
+    const thisDay = dayKey(instant, zone);
+    let diffLabel = '';
+    if (thisDay !== refDay) {
+      diffLabel = thisDay > refDay ? ' (+1 day)' : ' (\u22121 day)';
+    }
+
+    const row = document.createElement('div');
+    row.className = 'zone-row' + (highlight ? ' highlight' : '');
+    row.style.animationDelay = (i * 0.03) + 's';
+    row.innerHTML =
+      '<div class="zone-meta">' +
+        '<span class="zone-name">' + label + '</span>' +
+        '<span class="zone-sub">' + zone + ' \u00b7 ' + off + '</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;">' +
+        '<div class="zone-time">' +
+          '<span class="t">' + t + '</span>' +
+          '<span class="d">' + d + '<span class="day-diff">' + diffLabel + '</span></span>' +
+        '</div>' +
+        '<button class="copy-zone">Copy</button>' +
+      '</div>';
+    row.querySelector('.copy-zone').addEventListener('click', async () => {
+      const text = label + ': ' + t + ' (' + d + ', ' + off + ')';
+      try { await navigator.clipboard.writeText(text); showToast('Copied'); } catch { showToast('Copy failed'); }
+    });
+    container.appendChild(row);
+  }
+
+  // ---- Flexible string parsing ----
+  const ABBREVS = {
+    UTC: '+00:00', GMT: '+00:00', Z: '+00:00',
+    EST: '-05:00', EDT: '-04:00', CST: '-06:00', CDT: '-05:00',
+    MST: '-07:00', MDT: '-06:00', PST: '-08:00', PDT: '-07:00',
+    HST: '-10:00', AKST: '-09:00', AKDT: '-08:00',
+    BST: '+01:00', WET: '+00:00', WEST: '+01:00',
+    CET: '+01:00', CEST: '+02:00', EET: '+02:00', EEST: '+03:00',
+    MSK: '+03:00', IST: '+05:30', PKT: '+05:00',
+    ICT: '+07:00', WIB: '+07:00', SGT: '+08:00', HKT: '+08:00',
+    JST: '+09:00', KST: '+09:00',
+    AEST: '+10:00', AEDT: '+11:00', NZST: '+12:00', NZDT: '+13:00'
+  };
+
+  function parseOffsetMins(off) {
+    const m = off.match(/([+\-])(\d{2}):?(\d{2})/);
+    if (!m) return 0;
+    return (m[1] === '+' ? 1 : -1) * (parseInt(m[2], 10) * 60 + parseInt(m[3], 10));
+  }
+
+  function parseFlexible(s, fallbackZone) {
+    s = (s || '').trim();
+    if (!s) return null;
+
+    // Epoch milliseconds (13 digits, optional leading minus)
+    if (/^-?\d{13}$/.test(s)) {
+      const d = new Date(parseInt(s, 10));
+      if (!isNaN(d.getTime())) return d;
+    }
+    // Epoch seconds (10 digits)
+    if (/^-?\d{10}$/.test(s)) {
+      const d = new Date(parseInt(s, 10) * 1000);
+      if (!isNaN(d.getTime())) return d;
+    }
+
+    // ISO with explicit Z or numeric offset → real instant
+    if (/Z$/i.test(s) || /[+\-]\d{2}:?\d{2}$/.test(s)) {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return d;
+    }
+
+    // Trailing abbreviation: "...14:30 JST"
+    const am = s.match(/\b([A-Za-z]{2,5})\s*$/);
+    if (am) {
+      const abbrev = am[1].toUpperCase();
+      if (ABBREVS[abbrev]) {
+        const rest = s.slice(0, am.index).trim();
+        // Try ISO concatenation first
+        const isoTry = new Date(rest.replace(' ', 'T') + ABBREVS[abbrev]);
+        if (!isNaN(isoTry.getTime())) return isoTry;
+        // Otherwise parse rest as a local-wall-clock date, then re-apply offset
+        const native = new Date(rest);
+        if (!isNaN(native.getTime())) {
+          const offMins = parseOffsetMins(ABBREVS[abbrev]);
+          const asUTC = Date.UTC(
+            native.getFullYear(), native.getMonth(), native.getDate(),
+            native.getHours(), native.getMinutes(), native.getSeconds()
+          );
+          return new Date(asUTC - offMins * 60000);
+        }
+      }
+    }
+
+    // ISO-ish without TZ: YYYY-MM-DD[T ]HH:MM[:SS]
+    const iso = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[T ](\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if (iso) {
+      const [, y, mo, d, h, mi, se] = iso;
+      if (fallbackZone === 'Etc/UTC') {
+        return new Date(Date.UTC(+y, +mo - 1, +d, +h, +mi, +(se || 0)));
+      }
+      return new Date(zonedWallTimeToUTC(+y, +mo, +d, +h, +mi, fallbackZone));
+    }
+
+    // Date-only YYYY-MM-DD → midnight in fallback zone
+    const dateOnly = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (dateOnly) {
+      const [, y, mo, d] = dateOnly;
+      if (fallbackZone === 'Etc/UTC') {
+        return new Date(Date.UTC(+y, +mo - 1, +d, 0, 0, 0));
+      }
+      return new Date(zonedWallTimeToUTC(+y, +mo, +d, 0, 0, fallbackZone));
+    }
+
+    // Last resort: native Date parser. If it succeeds without an explicit TZ,
+    // re-interpret the wall-clock parts in the fallback zone (so "Jun 6, 2026 14:30"
+    // means "14:30 in your selected source", not "14:30 in browser local time").
+    const native = new Date(s);
+    if (!isNaN(native.getTime())) {
+      const y = native.getFullYear(), mo = native.getMonth() + 1, da = native.getDate();
+      const h = native.getHours(), mi = native.getMinutes();
+      if (fallbackZone === 'Etc/UTC') {
+        return new Date(Date.UTC(y, mo - 1, da, h, mi));
+      }
+      return new Date(zonedWallTimeToUTC(y, mo, da, h, mi, fallbackZone));
+    }
+
+    return null;
+  }
+
+  function applyParsedInstant(instant) {
+    if (direction === 'u2o') {
+      $('dt').value = instant.getUTCFullYear() + '-' + pad(instant.getUTCMonth() + 1) + '-' + pad(instant.getUTCDate()) +
+        'T' + pad(instant.getUTCHours()) + ':' + pad(instant.getUTCMinutes());
+    } else {
+      const zone = $('srcZone').value;
+      const p = new Intl.DateTimeFormat('en-CA', { timeZone: zone, hour12: false,
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+        .formatToParts(instant).reduce((a, x) => { a[x.type] = x.value; return a; }, {});
+      $('dt').value = p.year + '-' + p.month + '-' + p.day + 'T' + p.hour + ':' + p.minute;
+    }
+    renderResults();
+  }
+
+  function doParse() {
+    const s = $('pasteInput').value;
+    if (!s.trim()) { showToast('Paste a string first'); return; }
+    const fallback = direction === 'u2o' ? 'Etc/UTC' : $('srcZone').value;
+    const instant = parseFlexible(s, fallback);
+    if (!instant) { showToast('Couldn’t parse that'); return; }
+    applyParsedInstant(instant);
+    const summary = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Etc/UTC', year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    }).format(instant);
+    showToast('Parsed → ' + summary + ' UTC');
+  }
+
+  // ---- Direction handling ----
+  function setDirection(dir) {
+    direction = dir;
+    const u2o = dir === 'u2o';
+    $('dirU2O').classList.toggle('active', u2o);
+    $('dirO2U').classList.toggle('active', !u2o);
+    $('inputTitle').textContent = u2o ? 'Input time (UTC)' : 'Input time (source zone)';
+    $('dtLabel').textContent = u2o ? 'Date & time (UTC)' : 'Date & time (in source zone)';
+    $('srcZoneField').style.display = u2o ? 'none' : 'flex';
+    $('resultsTitle').textContent = u2o ? 'Converted times' : 'UTC + reference zones';
+    renderResults();
+  }
+
+  // ---- Setup ----
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function setNow() {
+    const now = new Date();
+    if (direction === 'u2o') {
+      // set UTC wall time
+      $('dt').value = now.getUTCFullYear() + '-' + pad(now.getUTCMonth()+1) + '-' + pad(now.getUTCDate()) +
+        'T' + pad(now.getUTCHours()) + ':' + pad(now.getUTCMinutes());
+    } else {
+      // set source-zone wall time = now in that zone
+      const zone = $('srcZone').value;
+      const p = new Intl.DateTimeFormat('en-CA', { timeZone: zone, hour12:false,
+        year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+        .formatToParts(now).reduce((a,x)=>{a[x.type]=x.value;return a;},{});
+      $('dt').value = p.year + '-' + p.month + '-' + p.day + 'T' + p.hour + ':' + p.minute;
+    }
+  }
+
+  fillSelect($('srcZone'), localZone);
+  fillSelect($('addZone'), 'Asia/Singapore');
+
+  $('dirU2O').addEventListener('click', () => { setDirection('u2o'); });
+  $('dirO2U').addEventListener('click', () => { setDirection('o2u'); setNow(); renderResults(); });
+  $('convertBtn').addEventListener('click', renderResults);
+  $('nowBtn').addEventListener('click', () => { setNow(); renderResults(); });
+  $('dt').addEventListener('change', renderResults);
+  $('srcZone').addEventListener('change', renderResults);
+  $('parseBtn').addEventListener('click', doParse);
+  $('pasteInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); doParse(); }
+  });
+
+  $('addBtn').addEventListener('click', () => {
+    const z = $('addZone').value;
+    if (displayZones.includes(z)) { showToast('Already in list'); return; }
+    displayZones.push(z);
+    renderResults();
+    showToast('Added ' + (ALL_ZONES.find(x=>x[0]===z)||[z,z])[1]);
+  });
+  $('resetBtn').addEventListener('click', () => { displayZones = [...DEFAULT_ZONES]; renderResults(); });
+
+  // Live UTC + local clock in header
+  function tickClock() {
+    const now = new Date();
+    const utc = new Intl.DateTimeFormat('en-GB',{timeZone:'Etc/UTC',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
+    const loc = new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
+    $('nowClock').innerHTML = 'Now \u2014 UTC <b>' + utc + '</b> &nbsp;\u00b7&nbsp; ' + localZone + ' <b>' + loc + '</b>';
+  }
+  tickClock(); setInterval(tickClock, 1000);
+
+  // init
+  setDirection('u2o');
+  setNow();
+  renderResults();
+</script>
+</body>
+</html>

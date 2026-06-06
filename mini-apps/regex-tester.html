@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regex Tester</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0c0e14; --panel:#141823; --edge:#242b3a; --ink:#eceff5; --muted:#727c93;
+    --accent:#a679ff; --accent2:#5ec8e8;
+    --match:rgba(166,121,255,0.32); --match-edge:rgba(166,121,255,0.7);
+    --match2:rgba(94,200,232,0.28);
+    --ok:#5ee0a8; --err:#ff6b74; --slash:#ffd166;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+  .topbar { display:flex; align-items:center; gap:12px; padding:14px 20px; background:var(--panel); border-bottom:1px solid var(--edge); }
+  .logo { font-weight:800; font-size:1.1rem; margin-right:auto; }
+  .logo span { color:var(--accent); }
+  .match-count { font-family:'JetBrains Mono',monospace; font-size:0.82rem; color:var(--muted); }
+  .match-count b { color:var(--accent); }
+  .match-count .ms { color:var(--muted); margin-left:6px; }
+
+  .main { flex:1; display:flex; gap:0; min-height:0; }
+  @media (max-width:840px){ .main{ flex-direction:column; } }
+  .left { flex:1; display:flex; flex-direction:column; padding:20px; gap:16px; min-width:0; overflow-y:auto; }
+  .right { width:300px; background:var(--panel); border-left:1px solid var(--edge); padding:18px; overflow-y:auto; flex-shrink:0; }
+  @media (max-width:840px){ .right{ width:100%; border-left:none; border-top:1px solid var(--edge); } }
+
+  .field h3 { font-size:0.66rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:9px; font-weight:600; }
+  .field-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:9px; }
+  .field-head h3 { margin:0; }
+  .hint-inline {
+    font-weight:400; color:var(--muted); font-family:'JetBrains Mono',monospace;
+    font-size:0.66rem; margin-left:8px; text-transform:none; letter-spacing:0.04em;
+  }
+  .copy-btn {
+    background:transparent; border:1px solid var(--edge); color:var(--muted);
+    padding:5px 10px; border-radius:7px; cursor:pointer; font-family:'JetBrains Mono',monospace;
+    font-size:0.7rem; letter-spacing:0.06em; transition:all 0.13s;
+  }
+  .copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+  /* regex input with /.../ wrapper */
+  .regex-row { display:flex; align-items:stretch; background:var(--panel); border:1px solid var(--edge); border-radius:12px; overflow:hidden; transition:border-color 0.15s; }
+  .regex-row.valid { border-color:rgba(94,224,168,0.5); }
+  .regex-row.invalid { border-color:rgba(255,107,116,0.6); }
+  .slash { display:grid; place-items:center; padding:0 14px; color:var(--slash); font-family:'JetBrains Mono',monospace; font-size:1.2rem; font-weight:700; background:var(--bg); }
+  #pattern { flex:1; background:transparent; border:none; outline:none; color:var(--ink); font-family:'JetBrains Mono',monospace; font-size:1rem; padding:14px 4px; min-width:0; }
+  .flags-box { display:flex; align-items:center; gap:2px; padding:0 10px 0 14px; background:var(--bg); font-family:'JetBrains Mono',monospace; }
+  .flag {
+    width:26px; height:26px; border-radius:7px; display:grid; place-items:center; cursor:pointer;
+    color:var(--muted); font-size:0.85rem; font-weight:600; transition:all 0.13s; user-select:none;
+  }
+  .flag.on { background:var(--accent); color:#fff; }
+  .flag:hover { color:var(--ink); }
+
+  .error-msg { color:var(--err); font-family:'JetBrains Mono',monospace; font-size:0.78rem; min-height:1em; }
+
+  textarea {
+    width:100%; min-height:160px; background:var(--panel); border:1px solid var(--edge); border-radius:12px;
+    padding:14px; color:var(--ink); font-family:'JetBrains Mono',monospace; font-size:0.92rem; line-height:1.7;
+    outline:none; resize:vertical;
+  }
+  textarea:focus { border-color:var(--accent); }
+
+  /* highlighted output overlay */
+  .highlight-box {
+    width:100%; min-height:120px; background:var(--panel); border:1px solid var(--edge); border-radius:12px;
+    padding:14px; font-family:'JetBrains Mono',monospace; font-size:0.92rem; line-height:1.7;
+    white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word; max-height:280px; overflow-y:auto;
+  }
+  .highlight-box mark {
+    background:var(--match); color:var(--ink); border-radius:3px; box-shadow:0 0 0 1px var(--match-edge);
+    padding:1px 0; transition:background 0.4s, color 0.4s;
+  }
+  .highlight-box mark:nth-of-type(even) { background:var(--match2); }
+  .highlight-box mark.focus-flash {
+    background:var(--accent); color:#fff;
+    box-shadow:0 0 0 2px var(--accent), 0 0 18px rgba(166,121,255,0.45);
+  }
+
+  /* replace section */
+  .replace-input {
+    width:100%; background:var(--panel); border:1px solid var(--edge); border-radius:10px;
+    padding:11px 14px; color:var(--ink); font-family:'JetBrains Mono',monospace;
+    font-size:0.92rem; outline:none; margin-bottom:9px; transition:border-color 0.15s;
+  }
+  .replace-input:focus { border-color:var(--accent); }
+  .replace-preview {
+    width:100%; background:var(--panel); border:1px solid var(--edge); border-radius:10px;
+    padding:14px; font-family:'JetBrains Mono',monospace; font-size:0.92rem; line-height:1.7;
+    white-space:pre-wrap; word-break:break-word; min-height:60px; max-height:240px; overflow-y:auto;
+  }
+  .replace-preview .changed {
+    background:rgba(94,200,232,0.20); border-radius:3px;
+    box-shadow:0 0 0 1px rgba(94,200,232,0.55); padding:1px 0;
+  }
+  .replace-preview .changed.empty {
+    background:rgba(255,107,116,0.18); box-shadow:0 0 0 1px rgba(255,107,116,0.4);
+    font-style:italic;
+  }
+  .replace-preview .muted-state { color:var(--muted); font-style:italic; }
+
+  /* match details */
+  .matches-list { display:flex; flex-direction:column; gap:8px; }
+  .match-item {
+    background:var(--panel); border:1px solid var(--edge); border-radius:10px;
+    padding:11px 13px; font-family:'JetBrains Mono',monospace; font-size:0.82rem;
+    cursor:pointer; transition:border-color 0.15s, box-shadow 0.15s;
+  }
+  .match-item:hover { border-color:var(--accent); }
+  .match-item.active { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .match-item .mhead { display:flex; justify-content:space-between; color:var(--muted); font-size:0.7rem; margin-bottom:5px; }
+  .match-item .mhead .idx { color:var(--accent); font-weight:600; }
+  .match-item .mval { color:var(--ok); word-break:break-all; }
+  .match-item .groups { margin-top:7px; padding-top:7px; border-top:1px solid var(--edge); display:flex; flex-direction:column; gap:3px; }
+  .match-item .grp { display:flex; gap:8px; font-size:0.76rem; }
+  .match-item .grp .gname { color:var(--accent2); flex-shrink:0; }
+  .match-item .grp .gval { color:var(--ink); word-break:break-all; }
+  .no-match { color:var(--muted); font-size:0.84rem; padding:14px; text-align:center; }
+
+  /* cheatsheet */
+  .right h3 { font-size:0.66rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; font-weight:600; }
+  .cheat { display:flex; flex-direction:column; gap:5px; margin-bottom:18px; }
+  .cheat .row { display:flex; gap:10px; font-size:0.78rem; align-items:baseline; }
+  .cheat code { background:var(--bg); border:1px solid var(--edge); border-radius:5px; padding:2px 7px; font-family:'JetBrains Mono',monospace; color:var(--accent); flex-shrink:0; min-width:42px; text-align:center; cursor:pointer; transition:border-color 0.13s; }
+  .cheat code:hover { border-color:var(--accent); }
+  .cheat .desc { color:var(--muted); }
+
+  .examples { display:flex; flex-direction:column; gap:6px; }
+  .examples button { text-align:left; background:var(--bg); border:1px solid var(--edge); border-radius:9px; padding:9px 12px; cursor:pointer; color:var(--ink); font-family:inherit; font-size:0.78rem; transition:all 0.13s; }
+  .examples button:hover { border-color:var(--accent); }
+  .examples button .ex-name { font-weight:600; }
+  .examples button .ex-pat { font-family:'JetBrains Mono',monospace; color:var(--muted); font-size:0.72rem; display:block; margin-top:2px; }
+
+  .toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--panel); border:1px solid var(--accent); color:var(--accent);
+    padding:10px 18px; border-radius:8px; font-family:'JetBrains Mono',monospace;
+    font-size:0.74rem; opacity:0; pointer-events:none; transition:all 0.3s; z-index:50;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">Regex<span>Lab</span></div>
+    <div class="match-count" id="matchCount"></div>
+  </div>
+
+  <div class="main">
+    <div class="left">
+      <div class="field">
+        <div class="field-head">
+          <h3>Regular Expression</h3>
+          <button class="copy-btn" id="copyRegexBtn" title="Copy /pattern/flags">Copy /…/</button>
+        </div>
+        <div class="regex-row" id="regexRow">
+          <span class="slash">/</span>
+          <input type="text" id="pattern" placeholder="enter pattern…" spellcheck="false" value="(\w+)@(\w+\.\w+)">
+          <span class="slash">/</span>
+          <div class="flags-box" id="flagsBox">
+            <div class="flag on" data-flag="g" title="global — find all matches">g</div>
+            <div class="flag" data-flag="i" title="case-insensitive">i</div>
+            <div class="flag" data-flag="m" title="multiline — ^ $ match line breaks">m</div>
+            <div class="flag" data-flag="s" title="dotall — . matches newlines">s</div>
+            <div class="flag" data-flag="u" title="unicode — full Unicode support">u</div>
+            <div class="flag" data-flag="y" title="sticky — match at lastIndex">y</div>
+          </div>
+        </div>
+        <div class="error-msg" id="errorMsg"></div>
+      </div>
+
+      <div class="field">
+        <h3>Test Text</h3>
+        <textarea id="testText" spellcheck="false">Contact us at support@example.com or sales@company.org.
+You can also reach admin@test.net for help.
+Invalid: not-an-email, @nothing, plain text.</textarea>
+      </div>
+
+      <div class="field">
+        <h3>Highlighted Result</h3>
+        <div class="highlight-box" id="highlight"></div>
+      </div>
+
+      <div class="field">
+        <h3>Match Details</h3>
+        <div class="matches-list" id="matchesList"></div>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <h3>Replace <span class="hint-inline">$1 · $&lt;name&gt; · $&amp; · $` · $'</span></h3>
+          <button class="copy-btn" id="copyReplaceBtn" title="Copy replaced text">Copy result</button>
+        </div>
+        <input type="text" id="replaceInput" class="replace-input" placeholder="replacement string — e.g. [$1@$2]" spellcheck="false">
+        <div class="replace-preview" id="replacePreview"><span class="muted-state">Enter a replacement to preview.</span></div>
+      </div>
+    </div>
+
+    <div class="right">
+      <h3>Examples</h3>
+      <div class="examples" id="examples"></div>
+
+      <h3 style="margin-top:20px">Quick Reference</h3>
+      <div class="cheat" id="cheat"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const patternEl     = document.getElementById('pattern');
+  const testEl        = document.getElementById('testText');
+  const regexRow      = document.getElementById('regexRow');
+  const errorMsg      = document.getElementById('errorMsg');
+  const highlight     = document.getElementById('highlight');
+  const matchesList   = document.getElementById('matchesList');
+  const matchCount    = document.getElementById('matchCount');
+  const replaceInput  = document.getElementById('replaceInput');
+  const replacePreview = document.getElementById('replacePreview');
+  const toast         = document.getElementById('toast');
+
+  const STORE_KEY = 'regex-lab-v1';
+  let flags = new Set(['g']);
+
+  // ---- Restore ----
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (saved) {
+      if (typeof saved.pattern === 'string') patternEl.value = saved.pattern;
+      if (typeof saved.text === 'string')    testEl.value = saved.text;
+      if (Array.isArray(saved.flags))         flags = new Set(saved.flags);
+      if (typeof saved.replace === 'string') replaceInput.value = saved.replace;
+    }
+  } catch(e){}
+  document.querySelectorAll('.flag').forEach(f =>
+    f.classList.toggle('on', flags.has(f.dataset.flag))
+  );
+
+  // ---- Toast ----
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), 1500);
+  }
+
+  // ---- Flags ----
+  document.getElementById('flagsBox').addEventListener('click', e => {
+    const f = e.target.closest('.flag'); if (!f) return;
+    const flag = f.dataset.flag;
+    if (flags.has(flag)) flags.delete(flag); else flags.add(flag);
+    f.classList.toggle('on', flags.has(flag));
+    run();
+  });
+
+  function esc(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+  // ---- Replacement expansion ($1, $<name>, $&, $`, $') ----
+  function expandReplacement(repl, m, text) {
+    return repl.replace(/\$(&|`|'|\d+|<([^>]+)>)/g, (whole, p, name) => {
+      if (p === '&')  return m[0];
+      if (p === '`')  return text.slice(0, m.index);
+      if (p === "'") return text.slice(m.index + m[0].length);
+      if (name)       return (m.groups && m.groups[name] != null) ? m.groups[name] : '';
+      const n = parseInt(p, 10);
+      return m[n] !== undefined ? m[n] : whole;
+    });
+  }
+
+  // ---- Save state (debounced) ----
+  let saveTimer;
+  function saveState() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        pattern: patternEl.value,
+        text:    testEl.value,
+        flags:   [...flags],
+        replace: replaceInput.value
+      }));
+    }, 350);
+  }
+
+  // ---- Main run ----
+  function run() {
+    saveState();
+    const pattern = patternEl.value;
+    const text    = testEl.value;
+    const flagStr = [...flags].join('');
+
+    errorMsg.textContent = '';
+    regexRow.classList.remove('valid','invalid');
+
+    if (!pattern) {
+      highlight.innerHTML = esc(text);
+      matchesList.innerHTML = '<div class="no-match">Enter a pattern to start matching.</div>';
+      matchCount.innerHTML = '';
+      replacePreview.innerHTML = '<span class="muted-state">Enter a replacement to preview.</span>';
+      return;
+    }
+
+    let re;
+    try {
+      re = new RegExp(pattern, flagStr);
+      regexRow.classList.add('valid');
+    } catch (err) {
+      regexRow.classList.add('invalid');
+      errorMsg.textContent = '✕ ' + err.message;
+      matchCount.innerHTML = '';
+      highlight.innerHTML = esc(text);
+      matchesList.innerHTML = '<div class="no-match">Fix the pattern to see matches.</div>';
+      replacePreview.innerHTML = '<span class="muted-state">Fix the pattern to preview.</span>';
+      return;
+    }
+
+    // ---- Collect matches with timing ----
+    const t0 = performance.now();
+    const matches = [];
+    const isGlobal = flags.has('g');
+    if (isGlobal) {
+      let m, guard = 0;
+      const gre = new RegExp(pattern, flagStr);
+      while ((m = gre.exec(text)) !== null) {
+        matches.push(m);
+        if (m.index === gre.lastIndex) gre.lastIndex++;
+        if (++guard > 100000) break;
+      }
+    } else {
+      const m = re.exec(text);
+      if (m) matches.push(m);
+    }
+    const elapsed = performance.now() - t0;
+
+    // ---- Highlight ----
+    let html = '', last = 0;
+    for (const m of matches) {
+      const start = m.index, end = m.index + m[0].length;
+      html += esc(text.slice(last, start));
+      html += m[0].length === 0
+        ? '<mark>&#8203;</mark>'
+        : '<mark>' + esc(m[0]) + '</mark>';
+      last = end;
+    }
+    html += esc(text.slice(last));
+    highlight.innerHTML = html || '<span style="color:var(--muted)">(empty)</span>';
+
+    // ---- Match count + timing ----
+    matchCount.innerHTML = matches.length
+      ? `<b>${matches.length}</b> match${matches.length===1?'':'es'}<span class="ms">· ${elapsed.toFixed(1)}ms</span>`
+      : `no matches<span class="ms">· ${elapsed.toFixed(1)}ms</span>`;
+
+    // ---- Replace preview ----
+    updateReplacePreview(text, matches);
+
+    // ---- Match details ----
+    if (!matches.length) {
+      matchesList.innerHTML = '<div class="no-match">No matches found.</div>';
+      return;
+    }
+    matchesList.innerHTML = matches.slice(0, 200).map((m, i) => {
+      const grps = [];
+      for (let g=1; g<m.length; g++) {
+        grps.push(`<div class="grp"><span class="gname">$${g}</span><span class="gval">${m[g]===undefined?'<i style="color:var(--muted)">undefined</i>':esc(m[g])}</span></div>`);
+      }
+      if (m.groups) {
+        for (const [name,val] of Object.entries(m.groups)) {
+          grps.push(`<div class="grp"><span class="gname">&lt;${esc(name)}&gt;</span><span class="gval">${val===undefined?'<i style="color:var(--muted)">undefined</i>':esc(val)}</span></div>`);
+        }
+      }
+      const groupsHtml = grps.length ? `<div class="groups">${grps.join('')}</div>` : '';
+      return `<div class="match-item" data-idx="${i}">
+        <div class="mhead"><span class="idx">Match ${i+1}</span><span>index ${m.index}</span></div>
+        <div class="mval">${m[0]===''?'<i style="color:var(--muted)">(empty match)</i>':esc(m[0])}</div>
+        ${groupsHtml}
+      </div>`;
+    }).join('') + (matches.length>200 ? `<div class="no-match">…and ${matches.length-200} more</div>` : '');
+  }
+
+  function updateReplacePreview(text, matches) {
+    const repl = replaceInput.value;
+    if (!matches.length) {
+      replacePreview.innerHTML = '<span class="muted-state">No matches to replace.</span>';
+      replacePreview.dataset.raw = text;
+      return;
+    }
+    let html = '', raw = '', last = 0;
+    for (const m of matches) {
+      const before = text.slice(last, m.index);
+      html += esc(before);
+      raw  += before;
+      const replaced = expandReplacement(repl, m, text);
+      raw  += replaced;
+      const cls = replaced === '' ? 'changed empty' : 'changed';
+      const shown = replaced === '' ? '∅' : esc(replaced);
+      html += `<span class="${cls}">${shown}</span>`;
+      last = m.index + m[0].length;
+    }
+    const tail = text.slice(last);
+    html += esc(tail);
+    raw  += tail;
+    replacePreview.innerHTML = html;
+    replacePreview.dataset.raw = raw;
+  }
+
+  // ---- Click match → scroll + flash in highlight ----
+  matchesList.addEventListener('click', e => {
+    const item = e.target.closest('.match-item');
+    if (!item) return;
+    const idx = +item.dataset.idx;
+    const marks = highlight.querySelectorAll('mark');
+    if (!marks[idx]) return;
+    marks.forEach(m => m.classList.remove('focus-flash'));
+    const target = marks[idx];
+    target.classList.add('focus-flash');
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelectorAll('.match-item').forEach(el => el.classList.remove('active'));
+    item.classList.add('active');
+    setTimeout(() => target.classList.remove('focus-flash'), 900);
+  });
+
+  // ---- Input listeners ----
+  patternEl.addEventListener('input', run);
+  testEl.addEventListener('input', run);
+  replaceInput.addEventListener('input', () => {
+    saveState();
+    // re-render only the replace preview using current matches (cheap re-run)
+    run();
+  });
+
+  // ---- Copy buttons ----
+  document.getElementById('copyRegexBtn').onclick = async () => {
+    const flagStr = [...flags].join('');
+    const text = `/${patternEl.value}/${flagStr}`;
+    try { await navigator.clipboard.writeText(text); showToast('Copied  ' + text); }
+    catch { showToast('Copy failed'); }
+  };
+  document.getElementById('copyReplaceBtn').onclick = async () => {
+    const raw = replacePreview.dataset.raw;
+    if (raw == null) { showToast('Nothing to copy'); return; }
+    try { await navigator.clipboard.writeText(raw); showToast('Copied result'); }
+    catch { showToast('Copy failed'); }
+  };
+
+  // ---- Examples ----
+  const EXAMPLES = [
+    { name:'Email address', pattern:'(\\w+)@(\\w+\\.\\w+)', flags:'g', text:'Contact us at support@example.com or sales@company.org.\nYou can also reach admin@test.net for help.\nInvalid: not-an-email, @nothing, plain text.' },
+    { name:'URL', pattern:'https?://[\\w.-]+(?:/[\\w./?%&=-]*)?', flags:'g', text:'Visit https://example.com or http://test.org/page?id=42.\nNot a url: just some text.' },
+    { name:'Phone number', pattern:'\\(?\\d{3}\\)?[\\s.-]?\\d{3}[\\s.-]?\\d{4}', flags:'g', text:'Call (555) 123-4567 or 555.987.6543 or 5551234567.' },
+    { name:'Date YYYY-MM-DD', pattern:'(\\d{4})-(\\d{2})-(\\d{2})', flags:'g', text:'Events on 2026-06-15 and 2025-12-31.\nBad date: 26-6-1.' },
+    { name:'Hex color', pattern:'#(?:[0-9a-fA-F]{3}){1,2}\\b', flags:'g', text:'Colors: #fff, #a679ff, #5EC8E8, and #123456. Not hex: #xyz.' },
+    { name:'Word boundary', pattern:'\\bcat\\b', flags:'gi', text:'The cat sat. A category is not a cat. Cats and a CAT.' },
+    { name:'Named groups', pattern:'(?<year>\\d{4})-(?<month>\\d{2})', flags:'g', text:'Quarter starts 2026-04 and ends 2026-06.' },
+    { name:'Repeated words', pattern:'\\b(\\w+)\\s+\\1\\b', flags:'gi', text:'This is is a test test of the the duplicate finder.' }
+  ];
+  const exWrap = document.getElementById('examples');
+  EXAMPLES.forEach(ex => {
+    const b = document.createElement('button');
+    b.innerHTML = `<span class="ex-name">${ex.name}</span><span class="ex-pat">/${esc(ex.pattern)}/${ex.flags}</span>`;
+    b.onclick = () => {
+      patternEl.value = ex.pattern;
+      testEl.value = ex.text;
+      flags = new Set(ex.flags.split(''));
+      document.querySelectorAll('.flag').forEach(f => f.classList.toggle('on', flags.has(f.dataset.flag)));
+      run();
+    };
+    exWrap.appendChild(b);
+  });
+
+  // ---- Cheatsheet ----
+  const CHEAT = [
+    ['.', 'any character'], ['\\d', 'digit 0-9'], ['\\w', 'word char'], ['\\s', 'whitespace'],
+    ['\\b', 'word boundary'], ['^', 'start of line'], ['$', 'end of line'],
+    ['*', '0 or more'], ['+', '1 or more'], ['?', '0 or 1'], ['{n,m}', 'n to m times'],
+    ['[abc]', 'any of a,b,c'], ['[^a]', 'not a'], ['(…)', 'capture group'],
+    ['(?:…)', 'non-capturing'], ['(?<n>…)', 'named group'], ['a|b', 'a or b'], ['\\1', 'backreference']
+  ];
+  const cheatWrap = document.getElementById('cheat');
+  CHEAT.forEach(([sym, desc]) => {
+    const row = document.createElement('div'); row.className = 'row';
+    row.innerHTML = `<code title="Insert">${esc(sym)}</code><span class="desc">${desc}</span>`;
+    row.querySelector('code').onclick = () => {
+      const ins = sym === '(…)' ? '()'
+                : sym === '(?:…)' ? '(?:)'
+                : sym === '(?<n>…)' ? '(?<name>)'
+                : sym === '{n,m}' ? '{1,3}'
+                : sym === '[abc]' ? '[abc]'
+                : sym;
+      insertAtCursor(patternEl, ins);
+      run();
+    };
+    cheatWrap.appendChild(row);
+  });
+  function insertAtCursor(el, text) {
+    const s = el.selectionStart, e = el.selectionEnd;
+    el.value = el.value.slice(0,s) + text + el.value.slice(e);
+    el.focus();
+    el.selectionStart = el.selectionEnd = s + text.length;
+  }
+
+  run();
+})();
+</script>
+</body>
+</html>

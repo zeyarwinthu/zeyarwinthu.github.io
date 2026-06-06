@@ -535,24 +535,29 @@
       : '';
   }
 
+  let liveTimer;
   input.addEventListener('input', () => {
     saveInput();
     updateInputMeta();
+    clearTimeout(liveTimer);
     const raw = input.value.trim();
     if (!raw) {
       status.className = 'status-idle';
       status.textContent = 'Awaiting input…';
       lastErrorPos = null;
+      setOutputEmpty();
       return;
     }
+    // Immediate validity check so error messages don't lag behind typing
     try {
       JSON.parse(raw);
-      status.className = 'status-ok';
-      status.textContent = 'Valid — press Format';
       lastErrorPos = null;
     } catch (e) {
       setErr(e, raw);
+      return;
     }
+    // Auto-format the moment JSON parses — debounced to stay smooth on large input
+    liveTimer = setTimeout(() => process('format'), 200);
   });
 
   // Click error → jump to position

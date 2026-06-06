@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV &harr; JSON</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #14110f;
+    --panel: #1c1815;
+    --panel-2: #221d19;
+    --ink: #e8e1d6;
+    --ink-dim: #9c9388;
+    --line: #322c26;
+    --accent: #d49a5a;
+    --accent-soft: rgba(212, 154, 90, 0.14);
+    --green: #8fb573;
+    --blue: #6fa8c7;
+    --red: #d9776c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    background:
+      radial-gradient(900px 500px at 80% -10%, rgba(212,154,90,0.07), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--panel), transparent);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .brand h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+  }
+  .brand .arrow { color: var(--accent); }
+  .brand span.sub {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--ink-dim);
+    font-size: 0.92rem;
+  }
+
+  .toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .toolbar .sep {
+    width: 1px; height: 22px; background: var(--line); margin: 0 4px;
+  }
+  button, select, label.opt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 8px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+  button:hover, select:hover, label.opt:hover {
+    border-color: var(--accent); color: var(--accent); background: var(--accent-soft);
+  }
+  button:active { transform: translateY(1px); }
+  button.primary { border-color: var(--accent); color: var(--accent); }
+  label.opt input { accent-color: var(--accent); cursor: pointer; }
+  label.opt.disabled { opacity: 0.4; pointer-events: none; }
+
+  /* Direction switch */
+  .dir-switch {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .dir-switch button {
+    border: none; border-radius: 0; background: var(--panel-2);
+    padding: 8px 14px;
+  }
+  .dir-switch button.active { background: var(--accent-soft); color: var(--accent); }
+  .dir-switch button:not(.active):hover { background: var(--panel); color: var(--ink); }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+  }
+  .pane { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+  .pane.left { border-right: 1px solid var(--line); }
+  .pane-head {
+    padding: 10px 22px;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-dim);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .pane-head .meta { color: var(--ink-dim); font-size: 0.62rem; letter-spacing: 0.08em; margin-left: 6px; }
+  .pane-head .actions { display: flex; gap: 5px; }
+  .pane-head .small-btn {
+    text-transform: uppercase;
+    font-size: 0.62rem;
+    padding: 4px 9px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--ink-dim);
+    background: transparent;
+    transition: all 0.18s ease;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.06em;
+  }
+  .pane-head .small-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .pane-head .small-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  .output-wrap { flex: 1; position: relative; display: flex; flex-direction: column; min-height: 0; }
+
+  textarea {
+    flex: 1; width: 100%;
+    background: transparent; border: none; outline: none; resize: none;
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem; line-height: 1.65rem;
+    padding: 18px 22px;
+    caret-color: var(--accent);
+    tab-size: 2;
+    white-space: pre;
+    overflow: auto;
+  }
+  textarea::placeholder { color: var(--ink-dim); font-style: italic; }
+  textarea::selection { background: var(--accent-soft); }
+  textarea[readonly] { color: var(--ink); }
+  textarea.hidden { display: none; }
+
+  /* Table view */
+  .table-view { flex: 1; overflow: auto; padding: 0; font-size: 0.78rem; }
+  .table-view.hidden { display: none; }
+  .table-view table {
+    border-collapse: separate; border-spacing: 0;
+    width: 100%; min-width: max-content;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .table-view th, .table-view td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    text-align: left;
+    white-space: nowrap;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .table-view th {
+    position: sticky; top: 0;
+    background: var(--panel-2);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    z-index: 1;
+  }
+  .table-view td.num { color: var(--blue); }
+  .table-view td.bool { color: var(--green); }
+  .table-view td.null { color: var(--ink-dim); font-style: italic; }
+  .table-view tr:nth-child(even) td { background: rgba(255,255,255,0.018); }
+  .table-view tr:hover td { background: var(--accent-soft); }
+  .table-empty { color: var(--ink-dim); font-style: italic; font-family: 'Fraunces', serif; padding: 22px; }
+
+  footer {
+    padding: 10px 24px;
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+    font-size: 0.72rem; letter-spacing: 0.04em;
+    min-height: 40px; display: flex; align-items: center; gap: 18px;
+    flex-wrap: wrap;
+  }
+  .status-ok { color: var(--green); }
+  .status-ok b { color: var(--accent); font-weight: 500; }
+  .status-err { color: var(--red); }
+  .status-idle { color: var(--ink-dim); }
+  .drop-hint { color: var(--ink-dim); margin-left: auto; font-style: italic; font-family: 'Fraunces', serif; }
+
+  .toast {
+    position: fixed; bottom: 60px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--panel-2); border: 1px solid var(--accent); color: var(--accent);
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 0.72rem; letter-spacing: 0.06em;
+    opacity: 0; pointer-events: none; transition: all 0.3s ease; z-index: 20;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .dragover { outline: 2px dashed var(--accent); outline-offset: -8px; }
+
+  @media (max-width: 720px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    .pane.left { border-right: none; border-bottom: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>CSV <span class="arrow" id="dirArrow">&rarr;</span> JSON</h1>
+      <span class="sub" id="subtitle">tabular, two ways</span>
+    </div>
+    <div class="toolbar">
+      <div class="dir-switch">
+        <button id="c2j" class="active">CSV &rarr; JSON</button>
+        <button id="j2c">JSON &rarr; CSV</button>
+      </div>
+      <select id="delim" title="Delimiter">
+        <option value="auto">Auto detect</option>
+        <option value=",">Comma ,</option>
+        <option value="\t">Tab</option>
+        <option value=";">Semicolon ;</option>
+        <option value="|">Pipe |</option>
+      </select>
+      <label class="opt" title="Infer numbers, booleans, null"><input type="checkbox" id="typed" checked> Typed</label>
+      <label class="opt" title="Treat first row as column names"><input type="checkbox" id="hasHeader" checked> Header</label>
+      <label class="opt" title="Pretty-print JSON"><input type="checkbox" id="pretty" checked> Pretty</label>
+      <label class="opt" id="jsonlOpt" title="JSON Lines (one object per line)"><input type="checkbox" id="jsonl"> JSONL</label>
+      <span class="sep"></span>
+      <button class="primary" id="convertBtn" title="Convert (Ctrl/⌘+Enter)">Convert</button>
+      <button id="swapBtn" title="Use output as new input and flip direction">Swap</button>
+      <button id="sampleBtn">Sample</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="pane left">
+      <div class="pane-head">
+        <span><span id="inLabel">CSV input</span><span class="meta" id="inMeta"></span></span>
+        <span class="actions">
+          <button class="small-btn" id="uploadBtn">Upload</button>
+          <button class="small-btn" id="clearBtn">Clear</button>
+        </span>
+      </div>
+      <textarea id="input" placeholder="Paste CSV here, or drop a .csv file&hellip;" spellcheck="false"></textarea>
+    </div>
+    <div class="pane">
+      <div class="pane-head">
+        <span><span id="outLabel">JSON output</span><span class="meta" id="outMeta"></span></span>
+        <span class="actions">
+          <button class="small-btn active" id="viewText" data-view="text">Text</button>
+          <button class="small-btn" id="viewTable" data-view="table">Table</button>
+          <button class="small-btn" id="copyBtn">Copy</button>
+          <button class="small-btn" id="downloadBtn">Download</button>
+        </span>
+      </div>
+      <div class="output-wrap">
+        <textarea id="output" placeholder="Output appears here&hellip;" spellcheck="false" readonly></textarea>
+        <div class="table-view hidden" id="tableView"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span id="status" class="status-idle">Ready &mdash; paste data and conversion starts automatically.</span>
+    <span class="drop-hint">drag a file onto the left pane</span>
+  </footer>
+
+  <input type="file" id="fileInput" accept=".csv,.tsv,.json,.jsonl,.txt" style="display:none;">
+  <div class="toast" id="toast"></div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const input  = $('input'), output = $('output');
+  const status = $('status'), toast = $('toast');
+  const tableView = $('tableView');
+  const STORE_KEY = 'csv-json-v1';
+
+  let direction = 'c2j'; // c2j | j2c
+  let lastTable = null;  // { headers, rows } cached for table view
+  let outputView = 'text';
+
+  function showToast(m){ toast.textContent = m; toast.classList.add('show'); clearTimeout(showToast._t); showToast._t = setTimeout(()=>toast.classList.remove('show'),1500); }
+  function setStatus(cls, msg){ status.className = cls; status.innerHTML = msg; }
+  function esc(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+  // ---- Delimiter ----
+  function getDelim(text){
+    const v = $('delim').value;
+    if (v === 'auto') return detectDelim(text);
+    return v === '\\t' ? '\t' : v;
+  }
+  function detectDelim(text){
+    const candidates = [',', '\t', ';', '|'];
+    const sample = text.split('\n').slice(0, 10).filter(l => l.length);
+    if (!sample.length) return ',';
+    let best = ',', bestScore = -1;
+    for (const d of candidates) {
+      const counts = sample.map(l => l.split(d).length);
+      const max = Math.max(...counts);
+      if (max < 2) continue;
+      const consistency = counts.filter(c => c === max).length / counts.length;
+      const score = max * consistency;
+      if (score > bestScore) { bestScore = score; best = d; }
+    }
+    return best;
+  }
+  function delimLabel(d){
+    return d === '\t' ? 'tab' : d === ',' ? 'comma' : d === ';' ? 'semicolon' : d === '|' ? 'pipe' : d;
+  }
+
+  // ---- CSV parser ----
+  function parseCSV(text, delim) {
+    const rows = []; let row = []; let field = ''; let i = 0; let inQuotes = false;
+    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    while (i < text.length) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (text[i+1] === '"') { field += '"'; i += 2; continue; }
+          inQuotes = false; i++; continue;
+        }
+        field += ch; i++; continue;
+      }
+      if (ch === '"') { inQuotes = true; i++; continue; }
+      if (ch === delim) { row.push(field); field = ''; i++; continue; }
+      if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+      field += ch; i++;
+    }
+    row.push(field); rows.push(row);
+    if (rows.length && rows[rows.length-1].length === 1 && rows[rows.length-1][0] === '') rows.pop();
+    return rows;
+  }
+
+  function coerce(val) {
+    if (!$('typed').checked) return val;
+    const t = val.trim();
+    if (t === '') return '';
+    if (t === 'true') return true;
+    if (t === 'false') return false;
+    if (t === 'null') return null;
+    if (/^-?\d+$/.test(t)) { const n = parseInt(t,10); if (String(n) === t) return n; }
+    if (/^-?\d*\.\d+$/.test(t) || /^-?\d+\.\d*$/.test(t) || /^-?\d+(\.\d+)?[eE][+-]?\d+$/.test(t)) return parseFloat(t);
+    return val;
+  }
+
+  // ---- CSV → JSON ----
+  function csvToJson() {
+    const delim = getDelim(input.value);
+    const rows = parseCSV(input.value, delim);
+    if (rows.length < 1 || (rows.length === 1 && rows[0].every(c => c === ''))) {
+      throw new Error('No data found.');
+    }
+    const useHeader = $('hasHeader').checked;
+    const headers = useHeader
+      ? rows[0].map(h => h.trim())
+      : rows[0].map((_, i) => `col${i+1}`);
+    const start = useHeader ? 1 : 0;
+    const objs = [];
+    const tableRows = [];
+    for (let r = start; r < rows.length; r++) {
+      const obj = {};
+      const trow = [];
+      headers.forEach((h, c) => {
+        const raw = rows[r][c] !== undefined ? rows[r][c] : '';
+        const val = coerce(raw);
+        obj[h] = val;
+        trow.push(val);
+      });
+      objs.push(obj);
+      tableRows.push(trow);
+    }
+    lastTable = { headers, rows: tableRows };
+    const jsonl = $('jsonl').checked;
+    const result = jsonl
+      ? objs.map(o => JSON.stringify(o)).join('\n')
+      : ($('pretty').checked ? JSON.stringify(objs, null, 2) : JSON.stringify(objs));
+    return { result, rows: objs.length, cols: headers.length, delim };
+  }
+
+  // ---- JSON → CSV ----
+  function escapeCell(v, delim) {
+    if (v === null || v === undefined) return '';
+    let s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+    if (s.includes('"') || s.includes(delim) || s.includes('\n')) {
+      s = '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function parseJsonInput(raw){
+    // accept either a JSON array/object, or JSONL (one JSON per line)
+    const t = raw.trim();
+    if (t.startsWith('[') || t.startsWith('{')) {
+      // try plain JSON first
+      try { return JSON.parse(t); }
+      catch (e) {
+        // fall through to JSONL attempt
+      }
+    }
+    // JSONL: parse line-by-line
+    const lines = t.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length && lines.every(l => l.startsWith('{') || l.startsWith('['))) {
+      try { return lines.map(l => JSON.parse(l)); }
+      catch (e) {}
+    }
+    // last resort: surface original error
+    return JSON.parse(t);
+  }
+
+  function jsonToCsv() {
+    const delim = $('delim').value === 'auto' ? ',' : ($('delim').value === '\\t' ? '\t' : $('delim').value);
+    let data = parseJsonInput(input.value);
+    if (!Array.isArray(data)) {
+      if (data && typeof data === 'object') data = [data];
+      else throw new Error('JSON must be an array of objects (or a single object).');
+    }
+    if (data.length === 0) { lastTable = { headers: [], rows: [] }; return { result: '', rows: 0, cols: 0, delim }; }
+    const keys = [];
+    const seen = new Set();
+    data.forEach(o => {
+      if (o && typeof o === 'object' && !Array.isArray(o)) {
+        Object.keys(o).forEach(k => { if (!seen.has(k)) { seen.add(k); keys.push(k); } });
+      }
+    });
+    if (keys.length === 0) throw new Error('No object keys found to build columns.');
+    const lines = [ keys.map(k => escapeCell(k, delim)).join(delim) ];
+    const tableRows = [];
+    data.forEach(o => {
+      const rowVals = keys.map(k => (o ? o[k] : ''));
+      tableRows.push(rowVals);
+      lines.push(rowVals.map(v => escapeCell(v, delim)).join(delim));
+    });
+    lastTable = { headers: keys, rows: tableRows };
+    return { result: lines.join('\n'), rows: data.length, cols: keys.length, delim };
+  }
+
+  // ---- Table render ----
+  function renderTable() {
+    if (!lastTable || !lastTable.headers.length) {
+      tableView.innerHTML = '<div class="table-empty">No data to display.</div>';
+      return;
+    }
+    const { headers, rows } = lastTable;
+    let html = '<table><thead><tr>';
+    headers.forEach(h => html += `<th>${esc(String(h))}</th>`);
+    html += '</tr></thead><tbody>';
+    const limit = Math.min(rows.length, 500);
+    for (let i = 0; i < limit; i++) {
+      html += '<tr>';
+      headers.forEach((_, c) => {
+        const v = rows[i][c];
+        let cls = '', shown;
+        if (v === null) { cls = 'null'; shown = 'null'; }
+        else if (typeof v === 'number') { cls = 'num'; shown = String(v); }
+        else if (typeof v === 'boolean') { cls = 'bool'; shown = String(v); }
+        else if (v === undefined || v === '') { cls = 'null'; shown = '—'; }
+        else { shown = String(v); }
+        html += `<td class="${cls}">${esc(shown)}</td>`;
+      });
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    if (rows.length > limit) html += `<div class="table-empty" style="padding:14px 22px">…and ${rows.length-limit} more rows (text view shows everything)</div>`;
+    tableView.innerHTML = html;
+  }
+
+  // ---- Convert ----
+  function convert(silent) {
+    saveState();
+    const raw = input.value.trim();
+    if (!raw) {
+      output.value = '';
+      lastTable = null;
+      renderTable();
+      setStatus('status-idle','Ready &mdash; paste data and conversion starts automatically.');
+      updateMeta();
+      return;
+    }
+    try {
+      const r = direction === 'c2j' ? csvToJson() : jsonToCsv();
+      output.value = r.result;
+      renderTable();
+      const extra = direction === 'c2j' ? ` &middot; delim <b>${delimLabel(r.delim)}</b>` : '';
+      setStatus('status-ok', '✓ Converted &middot; <b>' + r.rows + '</b> rows &middot; <b>' + r.cols + '</b> cols' + extra);
+    } catch (e) {
+      output.value = '';
+      lastTable = null;
+      renderTable();
+      setStatus('status-err', '✗ ' + e.message);
+    }
+    updateMeta();
+  }
+
+  function formatBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+    return (n/(1024*1024)).toFixed(2) + ' MB';
+  }
+  function updateMeta() {
+    $('inMeta').textContent = input.value
+      ? ` · ${input.value.split('\n').length} lines · ${formatBytes(new Blob([input.value]).size)}`
+      : '';
+    $('outMeta').textContent = output.value
+      ? ` · ${formatBytes(new Blob([output.value]).size)}`
+      : '';
+  }
+
+  // ---- View toggle ----
+  function setView(v) {
+    outputView = v;
+    $('viewText').classList.toggle('active', v === 'text');
+    $('viewTable').classList.toggle('active', v === 'table');
+    output.classList.toggle('hidden', v !== 'text');
+    tableView.classList.toggle('hidden', v !== 'table');
+    if (v === 'table') renderTable();
+  }
+
+  // ---- Direction ----
+  function setDirection(d, fromState) {
+    direction = d;
+    const c2j = d === 'c2j';
+    $('c2j').classList.toggle('active', c2j);
+    $('j2c').classList.toggle('active', !c2j);
+    $('dirArrow').innerHTML = c2j ? '&rarr;' : '&larr;';
+    $('inLabel').textContent = c2j ? 'CSV input' : 'JSON input';
+    $('outLabel').textContent = c2j ? 'JSON output' : 'CSV output';
+    input.placeholder = c2j ? 'Paste CSV here, or drop a .csv file…' : 'Paste JSON or JSONL here…';
+    // JSONL toggle only meaningful for c2j
+    $('jsonlOpt').classList.toggle('disabled', !c2j);
+    if (!fromState) {
+      output.value = '';
+      lastTable = null;
+      renderTable();
+      setStatus('status-idle','Ready &mdash; paste data and conversion starts automatically.');
+      updateMeta();
+    }
+  }
+
+  // ---- State persistence ----
+  let saveTimer;
+  function saveState() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({
+          input: input.value,
+          direction,
+          delim: $('delim').value,
+          typed: $('typed').checked,
+          pretty: $('pretty').checked,
+          hasHeader: $('hasHeader').checked,
+          jsonl: $('jsonl').checked,
+          view: outputView
+        }));
+      } catch(e){}
+    }, 400);
+  }
+  function restoreState() {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+      if (!s) return;
+      if (s.delim) $('delim').value = s.delim;
+      if (typeof s.typed === 'boolean')     $('typed').checked = s.typed;
+      if (typeof s.pretty === 'boolean')    $('pretty').checked = s.pretty;
+      if (typeof s.hasHeader === 'boolean') $('hasHeader').checked = s.hasHeader;
+      if (typeof s.jsonl === 'boolean')     $('jsonl').checked = s.jsonl;
+      if (s.direction)  setDirection(s.direction, true);
+      if (typeof s.input === 'string') input.value = s.input;
+      if (s.view) setView(s.view);
+    } catch(e){}
+  }
+
+  // ---- Wiring ----
+  $('c2j').addEventListener('click', () => setDirection('c2j'));
+  $('j2c').addEventListener('click', () => setDirection('j2c'));
+  $('convertBtn').addEventListener('click', () => convert());
+  ['delim','typed','pretty','hasHeader','jsonl'].forEach(id => $(id).addEventListener('change', () => convert()));
+  $('viewText').addEventListener('click', () => setView('text'));
+  $('viewTable').addEventListener('click', () => setView('table'));
+
+  // Live convert (debounced)
+  let liveTimer;
+  input.addEventListener('input', () => {
+    saveState();
+    updateMeta();
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      if (input.value.trim()) convert();
+      else convert(); // clears state cleanly
+    }, 250);
+  });
+
+  // Swap I/O
+  $('swapBtn').addEventListener('click', () => {
+    if (!output.value) { showToast('Nothing to swap'); return; }
+    input.value = output.value;
+    setDirection(direction === 'c2j' ? 'j2c' : 'c2j');
+    convert();
+    showToast('Swapped');
+  });
+
+  $('clearBtn').addEventListener('click', () => {
+    input.value=''; output.value=''; lastTable = null; renderTable();
+    setStatus('status-idle','Ready &mdash; paste data and conversion starts automatically.');
+    updateMeta(); saveState(); input.focus();
+  });
+
+  $('copyBtn').addEventListener('click', async () => {
+    if (!output.value) { showToast('Nothing to copy'); return; }
+    try { await navigator.clipboard.writeText(output.value); showToast('Copied output'); }
+    catch { showToast('Copy failed'); }
+  });
+
+  $('downloadBtn').addEventListener('click', () => {
+    if (!output.value) { showToast('Nothing to download'); return; }
+    const c2j = direction === 'c2j';
+    const ext = c2j ? ($('jsonl').checked ? 'jsonl' : 'json') : 'csv';
+    const mime = c2j ? 'application/json' : 'text/csv';
+    const blob = new Blob([output.value], { type: mime });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `converted-${new Date().toISOString().slice(0,10)}.${ext}`;
+    a.click(); URL.revokeObjectURL(a.href);
+    showToast('Downloaded');
+  });
+
+  // ---- File upload + drag/drop ----
+  $('uploadBtn').addEventListener('click', () => $('fileInput').click());
+  $('fileInput').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return; readFile(f);
+    e.target.value = '';
+  });
+  function readFile(f) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      input.value = ev.target.result;
+      if (/\.json$/i.test(f.name) || /\.jsonl$/i.test(f.name)) setDirection('j2c');
+      else if (/\.(csv|tsv|txt)$/i.test(f.name)) {
+        setDirection('c2j');
+        if (/\.tsv$/i.test(f.name)) $('delim').value = '\\t';
+      }
+      updateMeta();
+      convert();
+      showToast('Loaded ' + f.name);
+    };
+    reader.readAsText(f);
+  }
+  ['dragover','dragenter'].forEach(ev => input.addEventListener(ev, e => { e.preventDefault(); input.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(ev => input.addEventListener(ev, e => { e.preventDefault(); input.classList.remove('dragover'); }));
+  input.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) readFile(f); });
+
+  $('sampleBtn').addEventListener('click', () => {
+    if (direction === 'c2j') {
+      input.value = 'id,course,lessons,active,rating\n1,"Japanese for English Speakers",12,true,4.8\n2,"Burmese, Beginner",8,false,4.5\n3,Korean Basics,10,true,';
+    } else {
+      input.value = '[\n  {"id":1,"course":"Japanese for English Speakers","lessons":12,"active":true},\n  {"id":2,"course":"Burmese, Beginner","lessons":8,"active":false}\n]';
+    }
+    updateMeta();
+    convert();
+  });
+
+  // Tab in input
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = input.selectionStart, end = input.selectionEnd;
+      input.value = input.value.slice(0,s) + '  ' + input.value.slice(end);
+      input.selectionStart = input.selectionEnd = s + 2;
+      updateMeta(); saveState();
+    }
+  });
+
+  // Global shortcuts
+  document.addEventListener('keydown', e => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (mod && e.key === 'Enter') { e.preventDefault(); convert(); }
+  });
+
+  // ---- Init ----
+  setDirection('c2j', true);
+  restoreState();
+  updateMeta();
+  if (input.value.trim()) convert();
+  input.focus();
+</script>
+</body>
+</html>
