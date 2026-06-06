@@ -22,6 +22,33 @@
       text-align: center;
       margin-bottom: 48px;
     }
+    .section {
+      margin-bottom: 48px;
+    }
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 0 4px 24px;
+    }
+    .section-head h2 {
+      margin: 0;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .section-head .rule {
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+    .section-head .count {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      letter-spacing: 0.04em;
+    }
     h1 {
       margin: 0 0 12px;
       font-size: clamp(2rem, 4vw, 2.8rem);
@@ -87,7 +114,13 @@
       <h1>Mini Apps</h1>
       <p>A small collection of browser experiments. Pick one to try.</p>
     </header>
-    <div class="grid">
+    <section class="section">
+      <div class="section-head">
+        <h2>Games</h2>
+        <span class="rule"></span>
+        <span class="count">9</span>
+      </div>
+      <div class="grid">
       <a class="card" href="memory-match.html">
         <div class="thumb">🧠</div>
         <div class="name">Memory Match</div>
@@ -96,6 +129,56 @@
         <div class="thumb">⭕</div>
         <div class="name">Tic-Tac-Toe</div>
       </a>
+      <a class="card" href="snake.html">
+        <div class="thumb">🐍</div>
+        <div class="name">Snake</div>
+      </a>
+      <a class="card" href="what-a-mole.html">
+        <div class="thumb">🔨</div>
+        <div class="name">Whack-a-Mole</div>
+      </a>
+      <a class="card" href="2048.html">
+        <div class="thumb">
+          <svg viewBox="0 0 100 100" width="90" height="90" aria-hidden="true">
+            <rect width="100" height="100" rx="14" fill="#2c2722"/>
+            <rect x="6"  y="6"  width="40" height="40" rx="6" fill="#efe6db"/>
+            <rect x="54" y="6"  width="40" height="40" rx="6" fill="#ede0c8"/>
+            <rect x="6"  y="54" width="40" height="40" rx="6" fill="#f2b179"/>
+            <rect x="54" y="54" width="40" height="40" rx="6" fill="#edc22e"/>
+            <text x="26" y="33" font-family="Outfit, system-ui, sans-serif" font-size="22" font-weight="800" fill="#776e65" text-anchor="middle">2</text>
+            <text x="74" y="33" font-family="Outfit, system-ui, sans-serif" font-size="22" font-weight="800" fill="#776e65" text-anchor="middle">0</text>
+            <text x="26" y="81" font-family="Outfit, system-ui, sans-serif" font-size="22" font-weight="800" fill="#ffffff" text-anchor="middle">4</text>
+            <text x="74" y="81" font-family="Outfit, system-ui, sans-serif" font-size="18" font-weight="800" fill="#ffffff" text-anchor="middle">8</text>
+          </svg>
+        </div>
+        <div class="name">2048</div>
+      </a>
+      <a class="card" href="sudoku.html">
+        <div class="thumb">🧩</div>
+        <div class="name">Sudoku</div>
+      </a>
+      <a class="card" href="color-ball-jump.html">
+        <div class="thumb">🔴</div>
+        <div class="name">Color Ball Jump</div>
+      </a>
+      <a class="card" href="word-drop.html">
+        <div class="thumb">🔤</div>
+        <div class="name">Word Drop</div>
+      </a>
+      <a class="card" href="typing-test.html">
+        <div class="thumb">⌨️</div>
+        <div class="name">Typing Test</div>
+      </a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>Tools &amp; Others</h2>
+        <span class="rule"></span>
+        <span class="count">13</span>
+      </div>
+      <div class="grid">
       <a class="card" href="tts.html">
         <div class="thumb">🔊</div>
         <div class="name">Text-to-Speech</div>
@@ -170,14 +253,6 @@
         </div>
         <div class="name">QR Code Generator</div>
       </a>
-      <a class="card" href="snake.html">
-        <div class="thumb">🐍</div>
-        <div class="name">Snake</div>
-      </a>
-      <a class="card" href="what-a-mole.html">
-        <div class="thumb">🔨</div>
-        <div class="name">Whack-a-Mole</div>
-      </a>
       <a class="card" href="voice-note.html">
         <div class="thumb">🎤</div>
         <div class="name">Voice Notes</div>
@@ -190,33 +265,41 @@
         <div class="thumb">🎡</div>
         <div class="name">Spin Wheel</div>
       </a>
-      <a class="card" href="2048.html">
+      <a class="card" href="notepad.html">
+        <div class="thumb">📝</div>
+        <div class="name">Notepad</div>
+      </a>
+      <a class="card" href="json-formatter.html">
         <div class="thumb">
-          <svg viewBox="0 0 100 100" width="90" height="90" aria-hidden="true">
-            <rect width="100" height="100" rx="14" fill="#2c2722"/>
-            <rect x="6"  y="6"  width="40" height="40" rx="6" fill="#efe6db"/>
-            <rect x="54" y="6"  width="40" height="40" rx="6" fill="#ede0c8"/>
-            <rect x="6"  y="54" width="40" height="40" rx="6" fill="#f2b179"/>
-            <rect x="54" y="54" width="40" height="40" rx="6" fill="#edc22e"/>
-            <text x="26" y="33" font-family="Outfit, system-ui, sans-serif" font-size="22" font-weight="800" fill="#776e65" text-anchor="middle">2</text>
-            <text x="74" y="33" font-family="Outfit, system-ui, sans-serif" font-size="22" font-weight="800" fill="#776e65" text-anchor="middle">0</text>
-            <text x="26" y="81" font-family="Outfit, system-ui, sans-serif" font-size="22" font-weight="800" fill="#ffffff" text-anchor="middle">4</text>
-            <text x="74" y="81" font-family="Outfit, system-ui, sans-serif" font-size="18" font-weight="800" fill="#ffffff" text-anchor="middle">8</text>
+          <svg viewBox="0 0 100 100" width="84" height="84" aria-hidden="true">
+            <rect x="6" y="10" width="88" height="80" rx="10" fill="#0f172a"/>
+            <rect x="6" y="10" width="88" height="16" rx="10" fill="#1e293b"/>
+            <circle cx="16" cy="18" r="2.6" fill="#ef4444"/>
+            <circle cx="24" cy="18" r="2.6" fill="#f59e0b"/>
+            <circle cx="32" cy="18" r="2.6" fill="#10b981"/>
+            <text x="14" y="46" font-family="ui-monospace, monospace" font-size="10" fill="#a5b4fc">{</text>
+            <text x="22" y="58" font-family="ui-monospace, monospace" font-size="9" fill="#fbbf24">"id"</text>
+            <text x="42" y="58" font-family="ui-monospace, monospace" font-size="9" fill="#e2e8f0">:</text>
+            <text x="48" y="58" font-family="ui-monospace, monospace" font-size="9" fill="#86efac">42</text>
+            <text x="22" y="70" font-family="ui-monospace, monospace" font-size="9" fill="#fbbf24">"ok"</text>
+            <text x="42" y="70" font-family="ui-monospace, monospace" font-size="9" fill="#e2e8f0">:</text>
+            <text x="48" y="70" font-family="ui-monospace, monospace" font-size="9" fill="#7dd3fc">true</text>
+            <text x="14" y="82" font-family="ui-monospace, monospace" font-size="10" fill="#a5b4fc">}</text>
           </svg>
         </div>
-        <div class="name">2048</div>
+        <div class="name">JSON Formatter</div>
       </a>
-      <a class="card" href="sudoku.html">
-        <div class="thumb">🧩</div>
-        <div class="name">Sudoku</div>
+      <a class="card" href="text-compare.html">
+        <div class="thumb">⇄</div>
+        <div class="name">Text Compare</div>
       </a>
-      <a class="card" href="typing-test.html">
-        <div class="thumb">⌨️</div>
-        <div class="name">Typing Test</div>
+      <a class="card" href="user-name-generator.html">
+        <div class="thumb">🏷️</div>
+        <div class="name">Handle Generator</div>
       </a>
-      <a class="card" href="color-ball-jump.html">
-        <div class="thumb">🔴</div>
-        <div class="name">Color Ball Jump</div>
+      <a class="card" href="guitar-tuner.html">
+        <div class="thumb">🎸</div>
+        <div class="name">Guitar Tuner</div>
       </a>
       <a class="card" href="firefly.html">
         <div class="thumb">
@@ -258,7 +341,8 @@
         </div>
         <div class="name">Firefly</div>
       </a>
-    </div>
+      </div>
+    </section>
   </div>
 </body>
 </html>

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Compare</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0c0e13; --panel:#141821; --edge:#242c3a; --ink:#eceff5; --muted:#79839a;
+    --accent:#6c8cff;
+    --add-bg:rgba(94,224,168,0.18); --add-ink:#8ff0c2; --add-edge:rgba(94,224,168,0.45);
+    --del-bg:rgba(255,107,116,0.18); --del-ink:#ff9ba1; --del-edge:rgba(255,107,116,0.45);
+    --row-empty:rgba(255,255,255,0.025);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+    display:flex; flex-direction:column; height:100vh; overflow:hidden;
+  }
+
+  .topbar {
+    display:flex; align-items:center; gap:10px; padding:12px 18px;
+    background:var(--panel); border-bottom:1px solid var(--edge); flex-wrap:wrap;
+  }
+  .logo { font-weight:800; font-size:1.05rem; margin-right:auto; }
+  .logo span { color:var(--accent); }
+  .mode-group { display:flex; gap:3px; background:var(--bg); border:1px solid var(--edge); border-radius:9px; padding:3px; }
+  .mode-group button { background:transparent; border:none; color:var(--muted); padding:6px 12px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:0.76rem; font-weight:500; transition:all 0.15s; }
+  .mode-group button.active { background:var(--accent); color:#fff; }
+  .opt-btn { display:flex; align-items:center; gap:6px; background:var(--bg); border:1px solid var(--edge); color:var(--ink); padding:7px 11px; border-radius:8px; cursor:pointer; font-family:inherit; font-size:0.76rem; transition:all 0.15s; }
+  .opt-btn:hover { border-color:var(--accent); }
+  .opt-btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .opt-btn input { display:none; }
+
+  .summary { display:flex; gap:12px; font-family:'JetBrains Mono',monospace; font-size:0.76rem; align-items:center; padding-left:6px; }
+  .summary .add { color:var(--add-ink); }
+  .summary .del { color:var(--del-ink); }
+  .summary .same { color:var(--muted); }
+
+  .panes { flex:1; display:flex; min-height:0; }
+  @media (max-width:760px){ .panes{ flex-direction:column; } }
+  .pane { flex:1; display:flex; flex-direction:column; min-width:0; border-right:1px solid var(--edge); position:relative; }
+  .pane:last-child { border-right:none; }
+  .pane.hidden { display:none; }
+
+  .pane-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:7px 14px; background:var(--panel); border-bottom:1px solid var(--edge);
+    font-size:0.68rem; letter-spacing:0.11em; text-transform:uppercase; color:var(--muted); font-weight:600;
+  }
+  .pane-head .label-a { color:var(--del-ink); }
+  .pane-head .label-b { color:var(--add-ink); }
+  .pane-actions { display:flex; gap:2px; align-items:center; }
+  .icon-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--muted); padding:4px 7px; border-radius:6px;
+    background:transparent; border:none; font-family:inherit; font-size:0.85rem;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { color:var(--ink); background:var(--bg); }
+  .icon-btn.copied { color:var(--add-ink); }
+
+  textarea {
+    flex:1; width:100%; background:var(--bg); border:none; outline:none; resize:none;
+    color:var(--ink); font-family:'JetBrains Mono',monospace; font-size:0.9rem; line-height:1.7;
+    padding:14px 16px; tab-size:2;
+  }
+  textarea::placeholder { color:var(--muted); }
+  textarea.drag-over { background: rgba(108,140,255,0.10); box-shadow: inset 0 0 0 2px var(--accent); }
+
+  .stats {
+    padding:5px 14px; background:var(--panel); border-top:1px solid var(--edge);
+    font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--muted);
+    display:flex; gap:14px;
+  }
+
+  /* diff output panes */
+  .diff-out {
+    flex:1; overflow:auto; padding:14px 16px; font-family:'JetBrains Mono',monospace;
+    font-size:0.9rem; line-height:1.7; white-space:pre-wrap; word-break:break-word; display:none;
+  }
+  .diff-out.line-mode { padding:0; white-space:normal; }
+  .diff-out .eq { color:var(--ink); }
+  .diff-out .del { background:var(--del-bg); color:var(--del-ink); border-radius:3px; box-shadow:0 0 0 1px var(--del-edge); text-decoration:line-through; text-decoration-color:rgba(255,107,116,0.6); }
+  .diff-out .ins { background:var(--add-bg); color:var(--add-ink); border-radius:3px; box-shadow:0 0 0 1px var(--add-edge); }
+  .diff-out .del.focused,
+  .diff-out .ins.focused,
+  .diff-out .line-row.focused,
+  .diff-out .u-line.focused { outline:2px solid var(--accent); outline-offset:1px; }
+
+  /* line mode rows (used in split + unified-line) */
+  .line-row {
+    display:grid; grid-template-columns: 44px 1fr; min-height:1.7em;
+    border-bottom:1px solid rgba(255,255,255,0.025);
+  }
+  .line-row .line-num {
+    color:var(--muted); text-align:right; padding:0 8px;
+    border-right:1px solid var(--edge); user-select:none;
+    font-size:0.78rem; line-height:1.7;
+  }
+  .line-row .line-content {
+    padding:0 10px; white-space:pre-wrap; word-break:break-word; line-height:1.7;
+  }
+  .line-row.del .line-content { background:var(--del-bg); color:var(--del-ink); }
+  .line-row.ins .line-content { background:var(--add-bg); color:var(--add-ink); }
+  .line-row.empty { background:var(--row-empty); }
+  .line-row.empty .line-content::before { content:'·'; color:var(--muted); opacity:0.3; }
+
+  /* unified view */
+  .diff-out.unified .u-line {
+    display:grid; grid-template-columns: 26px 1fr; border-bottom:1px solid rgba(255,255,255,0.02);
+    min-height:1.7em;
+  }
+  .diff-out.unified .u-pre {
+    color:var(--muted); text-align:center; user-select:none; font-weight:700;
+    font-family:'JetBrains Mono',monospace; line-height:1.7;
+  }
+  .diff-out.unified .u-line.del-line { background:var(--del-bg); }
+  .diff-out.unified .u-line.del-line .u-pre,
+  .diff-out.unified .u-line.del-line .u-content { color:var(--del-ink); }
+  .diff-out.unified .u-line.ins-line { background:var(--add-bg); }
+  .diff-out.unified .u-line.ins-line .u-pre,
+  .diff-out.unified .u-line.ins-line .u-content { color:var(--add-ink); }
+  .diff-out.unified .u-content { padding:0 8px; white-space:pre-wrap; word-break:break-word; line-height:1.7; }
+
+  .footer { display:flex; gap:10px; padding:10px 18px; background:var(--panel); border-top:1px solid var(--edge); align-items:center; }
+  .footer .hint { font-size:0.74rem; color:var(--muted); margin-right:auto; }
+  .nav-group { display:flex; gap:2px; border:1px solid var(--edge); border-radius:9px; padding:3px; background:var(--bg); align-items:center; }
+  .nav-group .nav-btn { background:transparent; border:none; color:var(--muted); padding:5px 9px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:0.8rem; transition: color 0.15s; }
+  .nav-group .nav-btn:hover { color:var(--ink); }
+  .nav-group .nav-count { color:var(--muted); padding:0 8px; font-family:'JetBrains Mono',monospace; font-size:0.74rem; }
+  .btn { border:none; border-radius:10px; padding:10px 22px; cursor:pointer; font-family:inherit; font-weight:600; font-size:0.84rem; transition:transform 0.12s; }
+  .btn:hover { transform:translateY(-2px); }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-ghost { background:var(--bg); color:var(--ink); border:1px solid var(--edge); }
+  .warn { color:#ffd166; font-size:0.74rem; }
+
+  /* toast */
+  .toast {
+    position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+    background:var(--panel); border:1px solid var(--edge); color:var(--ink);
+    padding:10px 18px; border-radius:10px; font-size:0.82rem;
+    opacity:0; pointer-events:none; transition: opacity 0.25s, transform 0.25s;
+    z-index:100;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(-6px); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="logo">Text<span>Compare</span></div>
+    <div class="mode-group" id="modeGroup" title="Diff granularity">
+      <button data-mode="line">Line</button>
+      <button data-mode="word" class="active">Word</button>
+      <button data-mode="char">Character</button>
+    </div>
+    <div class="mode-group" id="viewGroup" title="View layout">
+      <button data-view="split" class="active">Split</button>
+      <button data-view="unified">Unified</button>
+    </div>
+    <button class="opt-btn" id="ignoreCase"><input type="checkbox">Aa Ignore case</button>
+    <button class="opt-btn" id="ignoreWs"><input type="checkbox">⎵ Ignore whitespace</button>
+    <button class="opt-btn" id="autoCompare"><input type="checkbox">⟳ Live</button>
+    <div class="summary" id="summary" style="display:none">
+      <span class="add" id="sAdd">+0</span>
+      <span class="del" id="sDel">−0</span>
+      <span class="same" id="sSame">=0</span>
+    </div>
+  </div>
+
+  <div class="panes" id="panes">
+    <div class="pane" id="paneA">
+      <div class="pane-head">
+        <span class="label-a">Original (A)</span>
+        <div class="pane-actions">
+          <input type="file" id="fileA" hidden accept="text/*,.json,.csv,.log,.md,.html,.css,.js,.ts,.py,.java,.go,.rs,.xml,.yaml,.yml,.toml,.ini,.sh,.sql">
+          <label for="fileA" class="icon-btn" title="Load file">📂</label>
+          <span class="icon-btn copy-btn" data-copy="a" title="Copy text" style="display:none">⧉</span>
+          <span class="icon-btn" data-clear="a" title="Clear">✕</span>
+        </div>
+      </div>
+      <textarea id="inputA" placeholder="Paste original text or drop a file here…" spellcheck="false"></textarea>
+      <div class="diff-out" id="outA"></div>
+      <div class="stats" id="statsA"><span>0 chars</span><span>0 words</span><span>0 lines</span></div>
+    </div>
+    <div class="pane" id="paneB">
+      <div class="pane-head">
+        <span class="label-b">Changed (B)</span>
+        <div class="pane-actions">
+          <input type="file" id="fileB" hidden accept="text/*,.json,.csv,.log,.md,.html,.css,.js,.ts,.py,.java,.go,.rs,.xml,.yaml,.yml,.toml,.ini,.sh,.sql">
+          <label for="fileB" class="icon-btn" title="Load file">📂</label>
+          <span class="icon-btn copy-btn" data-copy="b" title="Copy text" style="display:none">⧉</span>
+          <span class="icon-btn" data-clear="b" title="Clear">✕</span>
+        </div>
+      </div>
+      <textarea id="inputB" placeholder="Paste changed text or drop a file here…" spellcheck="false"></textarea>
+      <div class="diff-out" id="outB"></div>
+      <div class="stats" id="statsB"><span>0 chars</span><span>0 words</span><span>0 lines</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="hint" id="hint">Paste text in both panels, then Compare. Highlights show what changed.</div>
+    <span class="warn" id="warn"></span>
+    <div class="nav-group" id="navGroup" style="display:none">
+      <button class="nav-btn" id="prevChange" title="Previous change (Alt+P)">↑</button>
+      <span class="nav-count" id="navCount">0/0</span>
+      <button class="nav-btn" id="nextChange" title="Next change (Alt+N)">↓</button>
+    </div>
+    <button class="btn btn-ghost" id="editBtn" style="display:none">Edit</button>
+    <button class="btn btn-ghost" id="swapBtn">⇄ Swap</button>
+    <button class="btn btn-primary" id="compareBtn">Compare</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+// ===== DIFF ENGINE (LCS-based) =====
+function tokenize(text, mode) {
+  if (mode === 'char') return Array.from(text);
+  if (mode === 'line') return text.split('\n');
+  const re = /(\w+|\s+|[^\w\s])/g;
+  return text.match(re) || [];
+}
+function summarize(ops) {
+  let added=0, removed=0, same=0;
+  for (const o of ops) { if (o.type==='ins') added++; else if (o.type==='del') removed++; else same++; }
+  return { added, removed, same };
+}
+</script>
+<script>
+(function(){
+  const STORAGE_KEY = 'text-compare-prefs';
+  const inputA = document.getElementById('inputA');
+  const inputB = document.getElementById('inputB');
+  const outA = document.getElementById('outA');
+  const outB = document.getElementById('outB');
+  const paneA = document.getElementById('paneA');
+  const paneB = document.getElementById('paneB');
+  const statsA = document.getElementById('statsA');
+  const statsB = document.getElementById('statsB');
+  const summaryEl = document.getElementById('summary');
+  const hint = document.getElementById('hint');
+  const warnEl = document.getElementById('warn');
+  const compareBtn = document.getElementById('compareBtn');
+  const editBtn = document.getElementById('editBtn');
+  const swapBtn = document.getElementById('swapBtn');
+  const navGroup = document.getElementById('navGroup');
+  const navCount = document.getElementById('navCount');
+  const toast = document.getElementById('toast');
+
+  let state = {
+    mode: 'word', view: 'split',
+    ignoreCase: false, ignoreWs: false, autoCompare: false,
+  };
+  let comparing = false;
+  let changeFocusIdx = 0;
+  let totalChanges = 0;
+
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    state = { ...state, ...saved };
+  } catch(e) {}
+  function savePrefs() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+  }
+
+  // ===== Toggle groups =====
+  document.querySelectorAll('#modeGroup button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.mode === state.mode);
+    btn.addEventListener('click', () => {
+      state.mode = btn.dataset.mode;
+      document.querySelectorAll('#modeGroup button').forEach(x => x.classList.toggle('active', x === btn));
+      savePrefs();
+      if (comparing) runCompare();
+    });
+  });
+  document.querySelectorAll('#viewGroup button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === state.view);
+    btn.addEventListener('click', () => {
+      state.view = btn.dataset.view;
+      document.querySelectorAll('#viewGroup button').forEach(x => x.classList.toggle('active', x === btn));
+      savePrefs();
+      if (comparing) runCompare();
+    });
+  });
+
+  function bindToggle(id, key, onChange) {
+    const btn = document.getElementById(id);
+    const cb = btn.querySelector('input');
+    cb.checked = !!state[key];
+    btn.classList.toggle('on', cb.checked);
+    btn.addEventListener('click', () => {
+      cb.checked = !cb.checked;
+      state[key] = cb.checked;
+      btn.classList.toggle('on', cb.checked);
+      savePrefs();
+      if (onChange) onChange();
+      if (comparing) runCompare();
+    });
+  }
+  bindToggle('ignoreCase', 'ignoreCase');
+  bindToggle('ignoreWs', 'ignoreWs');
+  bindToggle('autoCompare', 'autoCompare', () => {
+    if (state.autoCompare && !comparing) scheduleAutoCompare();
+  });
+
+  // ===== Diff core =====
+  function esc(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+  function normTok(t, mode) {
+    let k = t;
+    if (state.ignoreCase) k = k.toLowerCase();
+    if (state.ignoreWs) {
+      if (mode === 'line') k = k.replace(/\s+/g, ' ').trim();
+      else if (/^\s+$/.test(k)) k = ' ';
+    }
+    return k;
+  }
+  function diffNormalized(tokA, tokB, mode) {
+    const ka = tokA.map(t => normTok(t, mode));
+    const kb = tokB.map(t => normTok(t, mode));
+    const n = ka.length, m = kb.length;
+    const dp = Array.from({length:n+1}, () => new Uint32Array(m+1));
+    for (let i=n-1; i>=0; i--)
+      for (let j=m-1; j>=0; j--)
+        dp[i][j] = ka[i] === kb[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+    const ops = []; let i=0, j=0;
+    while (i<n && j<m) {
+      if (ka[i] === kb[j]) { ops.push({type:'equal', valueA: tokA[i], valueB: tokB[j]}); i++; j++; }
+      else if (dp[i+1][j] >= dp[i][j+1]) { ops.push({type:'del', value: tokA[i]}); i++; }
+      else { ops.push({type:'ins', value: tokB[j]}); j++; }
+    }
+    while (i<n) ops.push({type:'del', value: tokA[i++]});
+    while (j<m) ops.push({type:'ins', value: tokB[j++]});
+    return ops;
+  }
+  function tagChanges(ops) {
+    let idx = -1, prevEq = true;
+    for (const op of ops) {
+      if (op.type === 'equal') prevEq = true;
+      else {
+        if (prevEq) idx++;
+        op.change = idx;
+        prevEq = false;
+      }
+    }
+    return idx + 1;
+  }
+
+  // ===== Renderers =====
+  function renderSplit(ops, mode) {
+    if (mode === 'line') return renderLineSplit(ops);
+    let htmlA = '', htmlB = '';
+    for (const o of ops) {
+      if (o.type === 'equal') {
+        htmlA += `<span class="eq">${esc(o.valueA)}</span>`;
+        htmlB += `<span class="eq">${esc(o.valueB)}</span>`;
+      } else if (o.type === 'del') {
+        htmlA += `<span class="del" data-change="${o.change}">${esc(o.value)}</span>`;
+      } else {
+        htmlB += `<span class="ins" data-change="${o.change}">${esc(o.value)}</span>`;
+      }
+    }
+    return { htmlA, htmlB };
+  }
+  function renderLineSplit(ops) {
+    let htmlA = '', htmlB = '';
+    let lnA = 1, lnB = 1;
+    for (const o of ops) {
+      if (o.type === 'equal') {
+        htmlA += lineRow(lnA++, o.valueA, 'eq');
+        htmlB += lineRow(lnB++, o.valueB, 'eq');
+      } else if (o.type === 'del') {
+        htmlA += lineRow(lnA++, o.value, 'del', o.change);
+        htmlB += lineRow('', '', 'empty');
+      } else {
+        htmlA += lineRow('', '', 'empty');
+        htmlB += lineRow(lnB++, o.value, 'ins', o.change);
+      }
+    }
+    return { htmlA, htmlB };
+  }
+  function lineRow(num, content, cls, change) {
+    const ch = change != null ? ` data-change="${change}"` : '';
+    return `<div class="line-row ${cls}"${ch}><span class="line-num">${num}</span><span class="line-content">${esc(content || '')}</span></div>`;
+  }
+  function renderUnified(ops, mode) {
+    if (mode === 'line') {
+      let html = '';
+      for (const o of ops) {
+        if (o.type === 'equal') html += `<div class="u-line"><span class="u-pre"> </span><span class="u-content">${esc(o.valueA)}</span></div>`;
+        else if (o.type === 'del') html += `<div class="u-line del-line" data-change="${o.change}"><span class="u-pre">−</span><span class="u-content">${esc(o.value)}</span></div>`;
+        else html += `<div class="u-line ins-line" data-change="${o.change}"><span class="u-pre">+</span><span class="u-content">${esc(o.value)}</span></div>`;
+      }
+      return html;
+    }
+    let html = '';
+    for (const o of ops) {
+      if (o.type === 'equal') html += `<span class="eq">${esc(o.valueA)}</span>`;
+      else if (o.type === 'del') html += `<span class="del" data-change="${o.change}">${esc(o.value)}</span>`;
+      else html += `<span class="ins" data-change="${o.change}">${esc(o.value)}</span>`;
+    }
+    return html;
+  }
+
+  // ===== Compare flow =====
+  function runCompare() {
+    const a = inputA.value, b = inputB.value;
+    if (!a && !b) return;
+
+    const tokA = tokenize(a, state.mode);
+    const tokB = tokenize(b, state.mode);
+
+    if (tokA.length * tokB.length > 6_000_000) {
+      warnEl.textContent = '⚠ Large input — comparison may be slow.';
+    } else warnEl.textContent = '';
+
+    const ops = diffNormalized(tokA, tokB, state.mode);
+    totalChanges = tagChanges(ops);
+    changeFocusIdx = 0;
+
+    const isLine = state.mode === 'line';
+    const isUnified = state.view === 'unified';
+    outA.classList.toggle('line-mode', isLine);
+    outB.classList.toggle('line-mode', isLine);
+    outA.classList.toggle('unified', isUnified);
+    outB.classList.toggle('unified', false);
+
+    if (isUnified) {
+      paneB.classList.add('hidden');
+      outA.innerHTML = renderUnified(ops, state.mode);
+    } else {
+      paneB.classList.remove('hidden');
+      const { htmlA, htmlB } = renderSplit(ops, state.mode);
+      outA.innerHTML = htmlA;
+      outB.innerHTML = htmlB;
+    }
+
+    const s = summarize(ops);
+    document.getElementById('sAdd').textContent = '+' + s.added;
+    document.getElementById('sDel').textContent = '−' + s.removed;
+    document.getElementById('sSame').textContent = '=' + s.same;
+    summaryEl.style.display = 'flex';
+
+    inputA.style.display = 'none'; inputB.style.display = 'none';
+    statsA.style.display = 'none'; statsB.style.display = 'none';
+    outA.style.display = 'block';
+    outB.style.display = isUnified ? 'none' : 'block';
+    editBtn.style.display = 'inline-block';
+    document.querySelectorAll('.copy-btn').forEach(b => b.style.display = '');
+    compareBtn.textContent = 'Re-compare';
+    hint.textContent = describeMode();
+    comparing = true;
+
+    if (!isUnified) syncScroll(outA, outB);
+
+    if (totalChanges > 0) {
+      navGroup.style.display = 'flex';
+      navCount.textContent = `1/${totalChanges}`;
+      focusChange(0, false);
+    } else {
+      navGroup.style.display = 'none';
+      navCount.textContent = '0/0';
+    }
+  }
+  function describeMode() {
+    const m = state.mode === 'line' ? 'Line' : state.mode === 'word' ? 'Word' : 'Character';
+    const v = state.view === 'unified' ? 'unified' : 'split';
+    return `${m}-level ${v} diff · Red = removed in A, Green = added in B`;
+  }
+
+  let scrollLock = false;
+  function syncScroll(el1, el2) {
+    function link(src, dst) {
+      src.onscroll = () => {
+        if (scrollLock) return; scrollLock = true;
+        const denom = (src.scrollHeight - src.clientHeight) || 1;
+        dst.scrollTop = (src.scrollTop / denom) * (dst.scrollHeight - dst.clientHeight);
+        scrollLock = false;
+      };
+    }
+    link(el1, el2); link(el2, el1);
+  }
+
+  function editMode() {
+    inputA.style.display = ''; inputB.style.display = '';
+    statsA.style.display = ''; statsB.style.display = '';
+    outA.style.display = 'none'; outB.style.display = 'none';
+    editBtn.style.display = 'none';
+    summaryEl.style.display = 'none';
+    navGroup.style.display = 'none';
+    paneB.classList.remove('hidden');
+    document.querySelectorAll('.copy-btn').forEach(b => b.style.display = 'none');
+    compareBtn.textContent = 'Compare';
+    hint.textContent = 'Editing — make changes, then Compare again.';
+    warnEl.textContent = '';
+    comparing = false;
+  }
+
+  // ===== Navigation =====
+  function focusChange(idx, smooth = true) {
+    if (totalChanges === 0) return;
+    if (idx < 0) idx = totalChanges - 1;
+    if (idx >= totalChanges) idx = 0;
+    changeFocusIdx = idx;
+    document.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
+    const elems = document.querySelectorAll(`[data-change="${idx}"]`);
+    elems.forEach(el => el.classList.add('focused'));
+    if (elems[0]) elems[0].scrollIntoView({ block:'center', behavior: smooth ? 'smooth' : 'auto' });
+    navCount.textContent = `${idx + 1}/${totalChanges}`;
+  }
+  document.getElementById('prevChange').onclick = () => focusChange(changeFocusIdx - 1);
+  document.getElementById('nextChange').onclick = () => focusChange(changeFocusIdx + 1);
+
+  // ===== Controls =====
+  compareBtn.onclick = () => {
+    if (!inputA.value && !inputB.value) {
+      hint.textContent = 'Add some text to both panels first.';
+      return;
+    }
+    runCompare();
+  };
+  editBtn.onclick = editMode;
+  swapBtn.onclick = () => {
+    const t = inputA.value; inputA.value = inputB.value; inputB.value = t;
+    updateStats();
+    if (comparing) runCompare();
+    else if (state.autoCompare) scheduleAutoCompare();
+  };
+  document.querySelectorAll('[data-clear]').forEach(el => {
+    el.onclick = () => {
+      if (comparing) editMode();
+      (el.dataset.clear === 'a' ? inputA : inputB).value = '';
+      updateStats();
+      if (state.autoCompare) scheduleAutoCompare();
+    };
+  });
+
+  // Copy buttons
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const which = btn.dataset.copy;
+      const text = (which === 'a' ? inputA : inputB).value;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.classList.add('copied');
+        showToast(`Copied side ${which.toUpperCase()}`);
+        setTimeout(() => btn.classList.remove('copied'), 900);
+      } catch(err) {
+        showToast('Copy failed');
+      }
+    };
+  });
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), 1500);
+  }
+
+  // ===== File loading =====
+  function loadFileFor(target, file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      target.value = e.target.result;
+      updateStats();
+      if (comparing) editMode();
+      if (state.autoCompare) scheduleAutoCompare();
+      showToast(`Loaded ${file.name}`);
+    };
+    reader.onerror = () => showToast('Could not read file');
+    reader.readAsText(file);
+  }
+  document.getElementById('fileA').addEventListener('change', e => {
+    loadFileFor(inputA, e.target.files[0]); e.target.value = '';
+  });
+  document.getElementById('fileB').addEventListener('change', e => {
+    loadFileFor(inputB, e.target.files[0]); e.target.value = '';
+  });
+
+  // Drag & drop
+  [inputA, inputB].forEach(ta => {
+    ta.addEventListener('dragover', e => { e.preventDefault(); ta.classList.add('drag-over'); });
+    ta.addEventListener('dragleave', () => ta.classList.remove('drag-over'));
+    ta.addEventListener('drop', e => {
+      e.preventDefault(); ta.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) loadFileFor(ta, file);
+    });
+  });
+
+  // ===== Live stats =====
+  function computeStats(text) {
+    const chars = text.length;
+    const words = (text.match(/\S+/g) || []).length;
+    const lines = text ? text.split('\n').length : 0;
+    return { chars, words, lines };
+  }
+  function updateStats() {
+    const a = computeStats(inputA.value);
+    const b = computeStats(inputB.value);
+    statsA.children[0].textContent = a.chars + ' chars';
+    statsA.children[1].textContent = a.words + ' words';
+    statsA.children[2].textContent = a.lines + ' lines';
+    statsB.children[0].textContent = b.chars + ' chars';
+    statsB.children[1].textContent = b.words + ' words';
+    statsB.children[2].textContent = b.lines + ' lines';
+  }
+  inputA.addEventListener('input', () => { updateStats(); if (state.autoCompare) scheduleAutoCompare(); });
+  inputB.addEventListener('input', () => { updateStats(); if (state.autoCompare) scheduleAutoCompare(); });
+
+  // ===== Auto-compare =====
+  let autoTimer = 0;
+  function scheduleAutoCompare() {
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(() => {
+      const a = inputA.value, b = inputB.value;
+      const lenProd = Math.max(a.length, 1) * Math.max(b.length, 1);
+      if (lenProd > 2_000_000) {
+        warnEl.textContent = '⚠ Live compare paused for very large input.';
+        return;
+      }
+      if (a || b) runCompare();
+    }, 350);
+  }
+
+  // ===== Keyboard shortcuts =====
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault(); compareBtn.click();
+    } else if (e.key === 'Escape' && comparing) {
+      e.preventDefault(); editMode();
+    } else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+      e.preventDefault(); if (comparing) focusChange(changeFocusIdx + 1);
+    } else if (e.altKey && (e.key === 'p' || e.key === 'P')) {
+      e.preventDefault(); if (comparing) focusChange(changeFocusIdx - 1);
+    }
+  });
+
+  // ===== Init =====
+//   inputA.value = "The quick brown fox jumps over the lazy dog.\nIt was the best of times, it was the worst of times.";
+//   inputB.value = "The quick red fox leaps over the sleepy dog.\nIt was the best of times, it was the age of wisdom.";
+  updateStats();
+  hint.textContent = 'Tip: Ctrl+Enter to compare · Esc to edit · Alt+N/P to step through changes.';
+  if (state.autoCompare) scheduleAutoCompare();
+})();
+</script>
+</body>
+</html>
