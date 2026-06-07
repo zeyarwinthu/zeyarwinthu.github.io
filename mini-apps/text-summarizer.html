@@ -88,7 +88,6 @@
   textarea::placeholder { color: var(--ink-dim); font-style: italic; }
   textarea::selection { background: var(--accent-soft); }
 
-  /* Output rendered area */
   .output {
     flex: 1; overflow: auto; padding: 22px 26px;
     font-family: 'Newsreader', serif; font-size: 1.08rem; line-height: 1.8rem;
@@ -110,7 +109,6 @@
   }
   .empty-state { color: var(--ink-dim); font-style: italic; }
 
-  /* loading shimmer */
   .loading { display: flex; flex-direction: column; gap: 12px; }
   .shimmer {
     height: 14px; border-radius: 6px;
@@ -122,7 +120,6 @@
   .thinking::after { content: ''; animation: dots 1.4s steps(4,end) infinite; }
   @keyframes dots { 0%{content:'';} 25%{content:'.';} 50%{content:'..';} 75%{content:'...';} }
 
-  /* Focus input */
   .focus-input {
     margin: 8px 26px 0; padding: 8px 0; background: transparent; border: none;
     border-bottom: 1px solid var(--line); color: var(--ink);
@@ -132,7 +129,6 @@
   .focus-input:focus { border-bottom-color: var(--accent); }
   .focus-input::placeholder { color: var(--ink-dim); }
 
-  /* Streaming cursor */
   .cursor {
     display: inline-block; width: 0.55em; color: var(--accent);
     animation: blink 1.1s steps(1) infinite; margin-left: 1px;
@@ -159,82 +155,39 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* API key — banner + modal */
-  .api-banner {
+  .info-banner {
     margin: 0 28px 4px; padding: 12px 18px;
     background: var(--accent-soft); border: 1px solid rgba(212,154,90,0.3);
     border-radius: 10px; display: flex; align-items: center; gap: 14px;
     font-family: 'Newsreader', serif; font-style: italic;
-    font-size: 0.95rem; color: var(--ink);
+    font-size: 0.95rem; color: var(--ink); line-height: 1.55;
   }
-  .api-banner.hidden { display: none; }
-  .api-banner b { color: var(--accent); font-weight: 500; font-style: normal; }
-  .api-banner button {
-    margin-left: auto; padding: 7px 14px; font-size: 0.7rem;
-    border: 1px solid var(--accent); color: var(--accent); background: transparent;
-    border-radius: 7px; font-family: 'JetBrains Mono', monospace;
-    text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer;
-    transition: background 0.15s;
-  }
-  .api-banner button:hover { background: var(--accent-soft); }
-  button#keyBtn { display: inline-flex; align-items: center; gap: 6px; }
-  button#keyBtn .dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--red); transition: background 0.15s;
-  }
-  button#keyBtn.ok .dot { background: var(--green); }
-
-  .api-modal {
-    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-    background: rgba(20,17,15,0.72); backdrop-filter: blur(6px);
-    z-index: 30; padding: 24px;
-  }
-  .api-modal.hidden { display: none; }
-  .api-modal .card {
-    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
-    padding: 26px 30px; width: min(460px, 100%);
-    font-family: 'Newsreader', serif;
-  }
-  .api-modal h3 {
-    font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.3rem;
-    margin-bottom: 6px;
-  }
-  .api-modal p {
-    font-size: 0.88rem; color: var(--ink-dim); line-height: 1.55; margin-bottom: 14px;
-  }
-  .api-modal input {
-    width: 100%; padding: 11px 14px;
-    background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
-    color: var(--ink); font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem; outline: none; margin-bottom: 14px; transition: border-color 0.15s;
-  }
-  .api-modal input:focus { border-color: var(--accent); }
-  .api-modal .actions {
-    display: flex; gap: 8px; justify-content: flex-end;
-  }
-  .api-modal .actions button {
-    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
-    text-transform: uppercase; letter-spacing: 0.08em;
-    padding: 9px 16px; border-radius: 7px; cursor: pointer;
-    background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
-    transition: all 0.15s;
-  }
-  .api-modal .actions button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-  .api-modal .actions button.primary { border-color: var(--accent); color: var(--accent); }
-  .api-modal .note {
-    font-size: 0.74rem; color: var(--ink-dim); font-style: italic; line-height: 1.6;
-    margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px;
-  }
-  .api-modal .note code {
+  .info-banner.hidden { display: none; }
+  .info-banner b { color: var(--accent); font-weight: 500; font-style: normal; }
+  .info-banner code {
     background: var(--panel-2); border: 1px solid var(--line); padding: 1px 6px;
     border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-style: normal;
-    font-size: 0.7rem; color: var(--ink);
+    font-size: 0.78rem; color: var(--ink);
   }
+
+  .ai-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 10px; border: 1px solid var(--line); border-radius: 7px;
+    background: var(--panel-2); color: var(--ink-dim);
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .ai-badge .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ink-dim); transition: background 0.2s;
+  }
+  .ai-badge.ok .dot { background: var(--green); }
+  .ai-badge.warn .dot { background: var(--accent); }
+  .ai-badge.err .dot { background: var(--red); }
 
   @media (max-width: 720px) {
     main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
     .pane.left { border-right: none; border-bottom: 1px solid var(--line); }
-    .api-banner { margin: 0 16px 4px; }
+    .info-banner { margin: 0 16px 4px; }
   }
 </style>
 </head>
@@ -242,14 +195,9 @@
   <header>
     <div class="brand">
       <h1>Summarizer<span class="dot">.</span></h1>
-      <span class="sub">distill any text</span>
+      <span class="sub">on-device &middot; no key, no login</span>
     </div>
     <div class="toolbar">
-      <select id="model" title="Model">
-        <option value="claude-opus-4-8" selected>Opus 4.8 · best</option>
-        <option value="claude-sonnet-4-6">Sonnet 4.6 · balanced</option>
-        <option value="claude-haiku-4-5">Haiku 4.5 · fastest</option>
-      </select>
       <select id="style" title="Summary style">
         <option value="brief">Brief paragraph</option>
         <option value="bullets" selected>Key bullet points</option>
@@ -264,13 +212,12 @@
       </select>
       <button class="primary" id="goBtn">Summarize</button>
       <button id="sampleBtn">Sample</button>
-      <button id="keyBtn" title="Anthropic API key"><span class="dot"></span>Key</button>
+      <span class="ai-badge" id="aiBadge" title="Browser AI status"><span class="dot"></span><span id="aiBadgeText">Checking</span></span>
     </div>
   </header>
 
-  <div class="api-banner hidden" id="apiBanner">
-    <span>Paste your <b>Anthropic API key</b> to enable summarization — it stays on this device.</span>
-    <button id="setupKeyBtn">Set up</button>
+  <div class="info-banner hidden" id="infoBanner">
+    <span id="bannerMsg"></span>
   </div>
 
   <main>
@@ -282,7 +229,7 @@
           <button class="small-btn" id="clearBtn">Clear</button>
         </span>
       </div>
-      <input class="focus-input" id="focus" placeholder="Focus on… (optional — e.g. risks, action items, technical details)" spellcheck="false">
+      <input class="focus-input" id="focus" placeholder="Focus on&hellip; (optional &mdash; e.g. risks, action items, technical details)" spellcheck="false">
       <textarea id="input" placeholder="Paste an article, transcript, notes, or any long text&hellip;" spellcheck="false"></textarea>
     </div>
     <div class="pane">
@@ -296,102 +243,94 @@
 
   <footer>
     <span class="stat">Words in: <b id="inWords">0</b></span>
-    <span class="stat" id="tokens" style="display:none">tokens <b id="inTok">0</b>→<b id="outTok">0</b></span>
     <span class="stat" id="status">Ready</span>
     <span class="reduction" id="reduction"></span>
   </footer>
 
   <div class="toast" id="toast"></div>
 
-  <div class="api-modal hidden" id="apiModal">
-    <div class="card">
-      <h3>Anthropic API key</h3>
-      <p>This tool calls the Claude API directly from your browser. Paste your key — it's stored only in this browser's localStorage and never sent anywhere except <code>api.anthropic.com</code>.</p>
-      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false">
-      <div class="actions">
-        <button id="clearKeyBtn">Clear</button>
-        <button id="cancelKeyBtn">Cancel</button>
-        <button class="primary" id="saveKeyBtn">Save</button>
-      </div>
-      <div class="note">
-        Get a key at <code>console.anthropic.com</code>. Don't paste a production key — generate a dedicated key with a small monthly budget for sandbox usage like this.
-      </div>
-    </div>
-  </div>
-
 <script>
   const $ = id => document.getElementById(id);
   const input = $('input'), output = $('output'), toast = $('toast');
   let lastSummaryText = '';
-
-  // ---- API key management ----
-  const KEY_STORAGE = 'text-summarizer-anthropic-key-v1';
-  let apiKey = '';
-  try { apiKey = localStorage.getItem(KEY_STORAGE) || ''; } catch(e){}
-
-  function updateKeyUI() {
-    const has = !!apiKey;
-    $('apiBanner').classList.toggle('hidden', has);
-    $('keyBtn').classList.toggle('ok', has);
-    $('keyBtn').title = has ? 'API key set — click to edit' : 'Set Anthropic API key';
-  }
-  function openKeyModal() {
-    $('apiKeyInput').value = apiKey;
-    $('apiModal').classList.remove('hidden');
-    setTimeout(() => $('apiKeyInput').focus(), 30);
-  }
-  function closeKeyModal() { $('apiModal').classList.add('hidden'); }
-  function saveKey(val) {
-    apiKey = (val || '').trim();
-    try {
-      if (apiKey) localStorage.setItem(KEY_STORAGE, apiKey);
-      else localStorage.removeItem(KEY_STORAGE);
-    } catch(e){}
-    updateKeyUI();
-  }
-
-  $('keyBtn').addEventListener('click', openKeyModal);
-  $('setupKeyBtn').addEventListener('click', openKeyModal);
-  $('saveKeyBtn').addEventListener('click', () => {
-    saveKey($('apiKeyInput').value);
-    closeKeyModal();
-    if (apiKey) showToast('API key saved');
-  });
-  $('clearKeyBtn').addEventListener('click', () => {
-    saveKey('');
-    $('apiKeyInput').value = '';
-    closeKeyModal();
-    showToast('API key cleared');
-  });
-  $('cancelKeyBtn').addEventListener('click', closeKeyModal);
-  $('apiModal').addEventListener('click', e => { if (e.target === $('apiModal')) closeKeyModal(); });
-  $('apiKeyInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); $('saveKeyBtn').click(); }
-    if (e.key === 'Escape') { e.preventDefault(); closeKeyModal(); }
-  });
-
-  updateKeyUI();
+  let currentSummarizer = null;
 
   function showToast(m){ toast.textContent = m; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1500); }
   function wordCount(t){ return t.trim() ? t.trim().split(/\s+/).length : 0; }
-
   function updateInWords(){ $('inWords').textContent = wordCount(input.value); }
   input.addEventListener('input', updateInWords);
 
-  const STYLE_PROMPTS = {
-    brief:    'Write a clear, flowing summary in connected prose. Capture the main argument and key supporting points.',
-    bullets:  'Summarize as key bullet points. Start with a one-sentence TL;DR, then list the most important takeaways as concise bullets.',
-    tldr:     'Write a single punchy TL;DR sentence (max ~30 words) capturing the absolute core.',
-    detailed: 'Produce a structured outline with short section headers and bullets underneath, covering main themes, key details, and any conclusions.',
-    eli5:     'Explain the text in plain, simple language as if to a curious beginner, avoiding jargon. Use short sentences.'
+  function setStatus(text, cls){
+    $('status').textContent = text;
+    $('status').className = 'stat' + (cls ? ' ' + cls : '');
+  }
+  function setBadge(text, cls){
+    $('aiBadgeText').textContent = text;
+    $('aiBadge').className = 'ai-badge' + (cls ? ' ' + cls : '');
+  }
+  function showBanner(html){
+    $('bannerMsg').innerHTML = html;
+    $('infoBanner').classList.remove('hidden');
+  }
+  function hideBanner(){ $('infoBanner').classList.add('hidden'); }
+
+  // Map UI style -> Summarizer API type + per-call context steering
+  const STYLE_TYPE = {
+    brief:    'teaser',
+    bullets:  'key-points',
+    tldr:     'tldr',
+    detailed: 'key-points',
+    eli5:     'key-points'
   };
-  const LENGTH_HINT = {
-    short:  'Keep it very concise (roughly 2-3 sentences or 3 bullets).',
-    medium: 'Aim for a moderate length (roughly a short paragraph or 4-6 bullets).',
-    long:   'Be thorough (a few paragraphs or 7-10 bullets) while staying tight and non-repetitive.'
+  const STYLE_CONTEXT = {
+    brief:    'Capture the main argument as a clear connected paragraph.',
+    bullets:  'Focus on the most important, non-redundant takeaways.',
+    tldr:     'Capture the absolute core in one punchy sentence.',
+    detailed: 'Be thorough and structured: main themes, key details, conclusions.',
+    eli5:     'Explain in plain, simple language for a curious beginner. Avoid jargon. Use short sentences.'
   };
 
-  // Render plain text/markdown-ish summary into styled HTML
+  // ---- Browser-AI support detection ----
+  async function checkSupport() {
+    if (typeof self === 'undefined' || !('Summarizer' in self)) {
+      return { ok: false, reason: 'unsupported' };
+    }
+    try {
+      const availability = await Summarizer.availability();
+      return { ok: availability !== 'unavailable', availability };
+    } catch (e) {
+      return { ok: false, reason: 'error', error: e.message || String(e) };
+    }
+  }
+
+  (async function init() {
+    setBadge('Checking', 'warn');
+    const support = await checkSupport();
+    if (!support.ok) {
+      setBadge('Unavailable', 'err');
+      setStatus('⚠ Browser AI unavailable', 'status-err');
+      $('goBtn').disabled = true;
+      showBanner(
+        "This page uses your <b>browser's built-in AI</b> &mdash; no API key, no login, nothing leaves your device. " +
+        "It looks like it isn't available here. Try <b>Chrome 138+</b> (or a recent Edge) on desktop with enough free disk for the on-device model. " +
+        "On Chrome you may need to enable <code>chrome://flags/#summarization-api-for-gemini-nano</code> on older builds."
+      );
+      return;
+    }
+    if (support.availability === 'downloadable') {
+      setBadge('Will download', 'warn');
+      setStatus('Ready — model downloads on first run', '');
+      showBanner("First run will download the on-device summarization model (a few hundred MB). It's stored by Chrome and reused after that. No network calls during summarization.");
+    } else if (support.availability === 'downloading') {
+      setBadge('Downloading', 'warn');
+      setStatus('Model downloading…', '');
+    } else {
+      setBadge('Ready', 'ok');
+      setStatus('Ready', 'status-ok');
+    }
+  })();
+
+  // ---- Rendering ----
   function renderSummary(text, style) {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length);
     let html = '';
@@ -399,7 +338,6 @@
     const closeList = () => { if (inList) { html += '</ul>'; inList = false; } };
 
     lines.forEach(line => {
-      // headers like "**Theme:**" or "## Header" or "Header:" (short, ending colon)
       let m;
       if ((m = line.match(/^#{1,4}\s+(.*)$/))) { closeList(); html += '<h3>' + esc(m[1]) + '</h3>'; return; }
       if (/^tl;?dr[:\s-]/i.test(line)) {
@@ -407,12 +345,11 @@
         html += '<div class="tldr">' + esc(line.replace(/^tl;?dr[:\s-]*/i,'')) + '</div>';
         return;
       }
-      if (/^[-*\u2022]\s+/.test(line)) {
+      if (/^[-*•]\s+/.test(line)) {
         if (!inList) { html += '<ul>'; inList = true; }
-        html += '<li>' + inline(line.replace(/^[-*\u2022]\s+/,'')) + '</li>';
+        html += '<li>' + inline(line.replace(/^[-*•]\s+/,'')) + '</li>';
         return;
       }
-      // bold-only line acting as header
       if ((m = line.match(/^\*\*(.+?)\*\*:?\s*$/))) { closeList(); html += '<h3>' + esc(m[1]) + '</h3>'; return; }
       closeList();
       html += '<p>' + inline(line) + '</p>';
@@ -427,29 +364,26 @@
       .replace(/\*(.+?)\*/g, '<em>$1</em>');
   }
 
+  // ---- Summarize ----
   async function summarize() {
     const text = input.value.trim();
     if (!text) { showToast('Paste some text first'); return; }
     if (wordCount(text) < 8) { showToast('Need a bit more text'); return; }
-    if (!apiKey) {
-      output.innerHTML = '<span class="empty-state">An Anthropic API key is required to call the model. ' +
-        'Click <b>Key</b> in the toolbar to add one — it stays in your browser.</span>';
-      $('status').textContent = '⚠ No API key';
-      $('status').className = 'stat status-err';
-      openKeyModal();
+
+    const support = await checkSupport();
+    if (!support.ok) {
+      output.innerHTML = '<span class="empty-state" style="color:var(--red)">Browser AI is not available. Use Chrome 138+ on a supported device.</span>';
+      setStatus('✗ Unsupported', 'status-err');
       return;
     }
 
-    const model  = $('model').value;
     const style  = $('style').value;
     const length = $('length').value;
     const focus  = $('focus').value.trim();
 
     $('goBtn').disabled = true;
-    $('status').textContent = 'Reading\u2026';
-    $('status').className = 'stat';
+    setStatus('Preparing…', '');
     $('reduction').textContent = '';
-    $('tokens').style.display = 'none';
     output.innerHTML =
       '<div class="thinking">Reading and distilling</div>' +
       '<div class="loading">' +
@@ -458,110 +392,69 @@
         '<div class="shimmer" style="width:85%"></div>' +
       '</div>';
 
-    let system = 'You are a precise summarization engine. ' + STYLE_PROMPTS[style] + ' ' + LENGTH_HINT[length] +
-      ' Output only the summary itself with no preamble, no "Here is", no meta commentary. ' +
-      'Use plain text with simple markdown: "## " for section headers, "- " for bullets. Do not wrap output in code fences.';
-    if (focus) system += ' The reader specifically wants you to emphasize: ' + focus + '.';
-
-    // Model-tier capabilities (per Anthropic docs):
-    //   Opus 4.8 / Sonnet 4.6 \u2192 adaptive thinking + effort
-    //   Haiku 4.5             \u2192 neither
-    const body = {
-      model,
-      max_tokens: 2048,
-      stream: true,
-      system,
-      messages: [{ role: 'user', content: 'Summarize the following text:\n\n' + text }]
-    };
-    if (model.includes('opus') || model === 'claude-sonnet-4-6') {
-      body.thinking = { type: 'adaptive' };
-      body.output_config = { effort: 'high' };
-    }
-
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify(body)
-      });
-      if (!response.ok) {
-        const detail = await response.text().catch(() => '');
-        throw new Error('API returned ' + response.status + (detail ? ' \u2014 ' + detail.slice(0, 200) : ''));
-      }
+      // 'detailed' wants long output regardless of slider; 'tldr' wants short.
+      const effectiveLength =
+        style === 'detailed' ? 'long' :
+        style === 'tldr'     ? 'short' :
+        length;
 
-      // SSE stream parsing
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let summary = '';
-      let inTok = 0, outTok = 0;
-      let firstChunk = true;
+      const sharedContext = STYLE_CONTEXT[style] || '';
+      const perCallContext = focus ? ('The reader specifically wants emphasis on: ' + focus + '.') : '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        const events = buffer.split('\n\n');
-        buffer = events.pop();
-
-        for (const raw of events) {
-          const dataLine = raw.split('\n').find(l => l.startsWith('data: '));
-          if (!dataLine) continue;
-          let data; try { data = JSON.parse(dataLine.slice(6)); } catch(e) { continue; }
-
-          if (data.type === 'message_start' && data.message?.usage) {
-            inTok  = data.message.usage.input_tokens  || 0;
-            outTok = data.message.usage.output_tokens || 0;
-          } else if (data.type === 'content_block_delta' && data.delta?.type === 'text_delta') {
-            if (firstChunk) {
-              firstChunk = false;
-              $('status').textContent = 'Writing\u2026';
-            }
-            summary += data.delta.text;
-            output.innerHTML = renderSummary(summary, style) + '<span class="cursor">\u258d</span>';
-            output.scrollTop = output.scrollHeight;
-          } else if (data.type === 'message_delta' && data.usage) {
-            outTok = data.usage.output_tokens ?? outTok;
-          }
+      currentSummarizer = await Summarizer.create({
+        type: STYLE_TYPE[style],
+        length: effectiveLength,
+        format: 'markdown',
+        sharedContext,
+        monitor(m) {
+          m.addEventListener('downloadprogress', e => {
+            const pct = Math.round((e.loaded || 0) * 100);
+            setBadge('Downloading ' + pct + '%', 'warn');
+            setStatus('⬇ Downloading on-device model… ' + pct + '%', '');
+          });
         }
+      });
+
+      setBadge('Ready', 'ok');
+      setStatus('Writing…', '');
+      hideBanner();
+
+      let summary = '';
+      const stream = currentSummarizer.summarizeStreaming(text, perCallContext ? { context: perCallContext } : undefined);
+
+      for await (const chunk of stream) {
+        summary += chunk;
+        output.innerHTML = renderSummary(summary, style) + '<span class="cursor">▍</span>';
+        output.scrollTop = output.scrollHeight;
       }
+
+      try { currentSummarizer.destroy && currentSummarizer.destroy(); } catch(e){}
+      currentSummarizer = null;
 
       summary = summary.trim().replace(/^```[a-z]*\n?/i, '').replace(/```$/, '').trim();
-      if (!summary) throw new Error('Empty response');
+      if (!summary) throw new Error('Empty response from on-device model');
       lastSummaryText = summary;
       output.innerHTML = renderSummary(summary, style);
 
       const inW = wordCount(text), outW = wordCount(summary);
       const pct = inW ? Math.round((1 - outW / inW) * 100) : 0;
-      $('status').textContent = '\u2713 Done';
-      $('status').className = 'stat status-ok';
-      $('reduction').textContent = outW + ' words \u00b7 ' + (pct > 0 ? pct + '% shorter' : 'condensed');
-      if (inTok || outTok) {
-        $('inTok').textContent  = inTok;
-        $('outTok').textContent = outTok;
-        $('tokens').style.display = '';
-      }
+      setStatus('✓ Done', 'status-ok');
+      $('reduction').textContent = outW + ' words · ' + (pct > 0 ? pct + '% shorter' : 'condensed');
     } catch (e) {
       const msg = e.message || String(e);
       let hint = '';
-      if (/Failed to fetch|NetworkError/i.test(msg)) {
-        hint = ' \u2014 likely a network or CORS issue. Verify the key in the <b>Key</b> dialog and try again.';
-      } else if (/401|invalid x-api-key|authentication/i.test(msg)) {
-        hint = ' \u2014 the API key was rejected. Click <b>Key</b> to update it.';
-      } else if (/429|rate.limit/i.test(msg)) {
-        hint = ' \u2014 rate limited. Wait a few seconds before retrying.';
-      } else if (/overload|529/i.test(msg)) {
-        hint = ' \u2014 API is temporarily overloaded. Try again shortly.';
+      if (/quota|memory|allocation|resource/i.test(msg)) {
+        hint = ' — the on-device model needs more memory or disk than is currently available.';
+      } else if (/download|network|fetch/i.test(msg)) {
+        hint = ' — model download failed. Check connection and try again.';
+      } else if (/language|locale|english|supported/i.test(msg)) {
+        hint = " — the on-device summarizer may not support this language yet.";
+      } else if (/NotAllowed|permission/i.test(msg)) {
+        hint = ' — the browser blocked the request. Enable on-device AI in your browser settings.';
       }
       output.innerHTML = '<span class="empty-state" style="color:var(--red)">Could not summarize: ' + esc(msg) + hint + '</span>';
-      $('status').textContent = '\u2717 Error';
-      $('status').className = 'stat status-err';
+      setStatus('✗ Error', 'status-err');
     } finally {
       $('goBtn').disabled = false;
     }
@@ -571,13 +464,12 @@
   $('clearBtn').addEventListener('click', () => {
     input.value=''; $('focus').value=''; updateInWords();
     output.innerHTML='<span class="empty-state">Your summary will appear here.</span>';
-    $('status').textContent='Ready'; $('status').className='stat';
-    $('reduction').textContent=''; $('tokens').style.display='none';
+    setStatus('Ready'); $('reduction').textContent='';
     input.focus();
   });
   $('pasteBtn').addEventListener('click', async () => {
     try { const t = await navigator.clipboard.readText(); input.value = t; updateInWords(); showToast('Pasted'); }
-    catch { showToast('Clipboard blocked \u2014 paste manually'); }
+    catch { showToast('Clipboard blocked — paste manually'); }
   });
   $('copyBtn').addEventListener('click', async () => {
     if (!lastSummaryText) { showToast('Nothing to copy'); return; }
