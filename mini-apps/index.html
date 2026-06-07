@@ -60,6 +60,54 @@
       color: #64748b;
       font-size: 1rem;
     }
+    .search-wrap {
+      max-width: 520px;
+      margin: 24px auto 0;
+      position: relative;
+    }
+    .search-wrap input {
+      width: 100%;
+      padding: 14px 44px 14px 44px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: #0f172a;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .search-wrap input::placeholder { color: #94a3b8; }
+    .search-wrap input:focus {
+      border-color: #1e3a8a;
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.08);
+    }
+    .search-wrap .search-icon {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; color: #94a3b8; pointer-events: none;
+    }
+    .search-wrap .clear-btn {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; display: none;
+      align-items: center; justify-content: center;
+      background: transparent; border: none; cursor: pointer;
+      color: #94a3b8; border-radius: 50%; font-size: 18px;
+      line-height: 1; padding: 0;
+    }
+    .search-wrap .clear-btn:hover { background: #e2e8f0; color: #0f172a; }
+    .search-wrap .clear-btn.visible { display: inline-flex; }
+    .section.hidden { display: none; }
+    .card.hidden { display: none; }
+    .no-results {
+      display: none;
+      text-align: center;
+      color: #64748b;
+      padding: 48px 16px;
+      font-size: 1rem;
+    }
+    .no-results.visible { display: block; }
+    .no-results b { color: #0f172a; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -113,12 +161,21 @@
     <header>
       <h1>Mini Apps</h1>
       <p>A small collection of browser experiments. Pick one to try.</p>
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="search" id="searchInput" placeholder="Search mini apps&hellip;" autocomplete="off" spellcheck="false" aria-label="Search mini apps">
+        <button type="button" class="clear-btn" id="clearSearch" aria-label="Clear search">&times;</button>
+      </div>
     </header>
-    <section class="section">
+    <div class="no-results" id="noResults">No apps match &ldquo;<b id="noResultsTerm"></b>&rdquo;.</div>
+    <section class="section" data-section="games">
       <div class="section-head">
         <h2>Games</h2>
         <span class="rule"></span>
-        <span class="count">10</span>
+        <span class="count" data-count></span>
       </div>
       <div class="grid">
       <a class="card" href="memory-match.html">
@@ -205,11 +262,11 @@
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" data-section="tools">
       <div class="section-head">
         <h2>Tools &amp; Others</h2>
         <span class="rule"></span>
-        <span class="count">16</span>
+        <span class="count" data-count></span>
       </div>
       <div class="grid">
       <a class="card" href="tts.html">
@@ -411,5 +468,90 @@
       </div>
     </section>
   </div>
+  <script>
+    (function () {
+      const searchInput = document.getElementById('searchInput');
+      const clearBtn = document.getElementById('clearSearch');
+      const noResults = document.getElementById('noResults');
+      const noResultsTerm = document.getElementById('noResultsTerm');
+      const sections = Array.from(document.querySelectorAll('.section'));
+
+      const items = Array.from(document.querySelectorAll('.card')).map(card => {
+        const section = card.closest('.section');
+        const nameEl = card.querySelector('.name');
+        const name = nameEl ? nameEl.textContent.trim() : '';
+        const sectionLabel = section ? (section.dataset.section || '') : '';
+        const haystack = (name + ' ' + sectionLabel + ' ' + (card.getAttribute('href') || ''))
+          .toLowerCase()
+          .replace(/[^a-z0-9 ]+/g, ' ');
+        return { card, section, name, haystack };
+      });
+
+      const totalsBySection = new Map();
+      sections.forEach(s => {
+        const total = items.filter(i => i.section === s).length;
+        totalsBySection.set(s, total);
+      });
+
+      function normalize(q) {
+        return q.toLowerCase().trim().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean);
+      }
+
+      function applyFilter(q) {
+        const terms = normalize(q);
+        const matches = items.filter(({ haystack }) =>
+          terms.every(t => haystack.includes(t))
+        );
+        const matchSet = new Set(matches.map(m => m.card));
+
+        items.forEach(({ card }) => card.classList.toggle('hidden', !matchSet.has(card)));
+
+        let totalShown = 0;
+        sections.forEach(section => {
+          const total = totalsBySection.get(section) || 0;
+          const shown = items.filter(i => i.section === section && matchSet.has(i.card)).length;
+          section.classList.toggle('hidden', shown === 0);
+          const countEl = section.querySelector('[data-count]');
+          if (countEl) {
+            countEl.textContent = (terms.length && shown !== total) ? (shown + ' of ' + total) : total;
+          }
+          totalShown += shown;
+        });
+
+        if (terms.length && totalShown === 0) {
+          noResultsTerm.textContent = q.trim();
+          noResults.classList.add('visible');
+        } else {
+          noResults.classList.remove('visible');
+        }
+
+        clearBtn.classList.toggle('visible', q.length > 0);
+      }
+
+      searchInput.addEventListener('input', e => applyFilter(e.target.value));
+      clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        applyFilter('');
+        searchInput.focus();
+      });
+      searchInput.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && searchInput.value) {
+          searchInput.value = '';
+          applyFilter('');
+        }
+      });
+
+      // Focus shortcut: "/" anywhere
+      document.addEventListener('keydown', e => {
+        if (e.key === '/' && document.activeElement !== searchInput && !e.metaKey && !e.ctrlKey) {
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.select();
+        }
+      });
+
+      applyFilter('');
+    })();
+  </script>
 </body>
 </html>
